@@ -128,7 +128,10 @@ def test_multiple_file_observable_expression(observation_class, op):
     op1_exp = stix2.ObservationExpression(bool1_exp)
     op2_exp = stix2.ObservationExpression(exp3)
     exp = observation_class([op1_exp, op2_exp])
-    assert str(exp) == "[file:hashes.'SHA-256' = 'bf07a7fbb825fc0aae7bf4a1177b2b31fcf8a3feeaf7092761e18c859ee52a9c' OR file:hashes.MD5 = 'cead3f77f6cda6ec00f57d76c9a6879f'] {} [file:hashes.'SHA-256' = 'aec070645fe53ee3b3763059376134f058cc337247c978add178b6ccdfb0019f']".format(op)  # noqa
+    assert (
+        str(exp)
+        == f"[file:hashes.'SHA-256' = 'bf07a7fbb825fc0aae7bf4a1177b2b31fcf8a3feeaf7092761e18c859ee52a9c' OR file:hashes.MD5 = 'cead3f77f6cda6ec00f57d76c9a6879f'] {op} [file:hashes.'SHA-256' = 'aec070645fe53ee3b3763059376134f058cc337247c978add178b6ccdfb0019f']"
+    )
 
 
 def test_root_types():

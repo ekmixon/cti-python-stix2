@@ -34,11 +34,7 @@ def collapse_lists(lists):
 
 
 def remove_terminal_nodes(parse_tree_nodes):
-    values = []
-    for x in parse_tree_nodes:
-        if not isinstance(x, TerminalNode):
-            values.append(x)
-    return values
+    return [x for x in parse_tree_nodes if not isinstance(x, TerminalNode)]
 
 
 _TIMESTAMP_RE = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z')
@@ -64,7 +60,7 @@ class STIXPatternVisitorForSTIX2():
     def instantiate(self, klass_name, *args):
         klass_to_instantiate = None
         if self.module_suffix:
-            klass_to_instantiate = self.get_class(klass_name + "For" + self.module_suffix)
+            klass_to_instantiate = self.get_class(f"{klass_name}For{self.module_suffix}")
         if not klass_to_instantiate:
             # use the classes in python_stix2
             klass_to_instantiate = globals()[klass_name]
@@ -132,12 +128,12 @@ class STIXPatternVisitorForSTIX2():
         children = self.visitChildren(ctx)
         if len(children) == 1:
             return children[0]
-        else:
-            if isinstance(children[0], _BooleanExpression) and same_boolean_operator(children[0].operator, children[1]):
-                children[0].operands.append(children[2])
-                return children[0]
-            else:
-                return self.instantiate("OrBooleanExpression", [children[0], children[2]])
+        if not isinstance(
+            children[0], _BooleanExpression
+        ) or not same_boolean_operator(children[0].operator, children[1]):
+            return self.instantiate("OrBooleanExpression", [children[0], children[2]])
+        children[0].operands.append(children[2])
+        return children[0]
 
     # Visit a parse tree produced by STIXPatternParser#comparisonExpressionAnd.
     def visitComparisonExpressionAnd(self, ctx):
@@ -145,12 +141,10 @@ class STIXPatternVisitorForSTIX2():
         children = self.visitChildren(ctx)
         if len(children) == 1:
             return children[0]
-        else:
-            if isinstance(children[0], _BooleanExpression):
-                children[0].operands.append(children[2])
-                return children[0]
-            else:
-                return self.instantiate("AndBooleanExpression", [children[0], children[2]])
+        if not isinstance(children[0], _BooleanExpression):
+            return self.instantiate("AndBooleanExpression", [children[0], children[2]])
+        children[0].operands.append(children[2])
+        return children[0]
 
     # Visit a parse tree produced by STIXPatternParser#propTestEqual.
     def visitPropTestEqual(self, ctx):
@@ -224,12 +218,14 @@ class STIXPatternVisitorForSTIX2():
     def visitStartStopQualifier(self, ctx):
         children = self.visitChildren(ctx)
         # 2.0 parser will accept any string, need to make sure it is a full STIX timestamp
-        if isinstance(children[1], StringConstant):
-            if not check_for_valid_timetamp_syntax(children[1].value):
-                raise (ValueError("Start time is not a legal timestamp"))
-        if isinstance(children[3], StringConstant):
-            if not check_for_valid_timetamp_syntax(children[3].value):
-                raise (ValueError("Stop time is not a legal timestamp"))
+        if isinstance(
+            children[1], StringConstant
+        ) and not check_for_valid_timetamp_syntax(children[1].value):
+            raise (ValueError("Start time is not a legal timestamp"))
+        if isinstance(
+            children[3], StringConstant
+        ) and not check_for_valid_timetamp_syntax(children[3].value):
+            raise (ValueError("Stop time is not a legal timestamp"))
 
         return StartStopQualifier(children[1], children[3])
 
@@ -325,9 +321,15 @@ class STIXPatternVisitorForSTIX2():
         return children[0]
 
     def visitTerminal(self, node):
-        if node.symbol.type == self.parser_class.IntPosLiteral or node.symbol.type == self.parser_class.IntNegLiteral:
+        if node.symbol.type in [
+            self.parser_class.IntPosLiteral,
+            self.parser_class.IntNegLiteral,
+        ]:
             return IntegerConstant(node.getText())
-        elif node.symbol.type == self.parser_class.FloatPosLiteral or node.symbol.type == self.parser_class.FloatNegLiteral:
+        elif node.symbol.type in [
+            self.parser_class.FloatPosLiteral,
+            self.parser_class.FloatNegLiteral,
+        ]:
             return FloatConstant(node.getText())
         elif node.symbol.type == self.parser_class.HexLiteral:
             return HexConstant(node.getText(), from_parse_tree=True)

@@ -65,8 +65,7 @@ class Filter(collections.namedtuple('Filter', ['property', 'op', 'value'])):
 
         _check_filter_components(prop, op, value)
 
-        self = super(Filter, cls).__new__(cls, prop, op, value)
-        return self
+        return super(Filter, cls).__new__(cls, prop, op, value)
 
     def _check_property(self, stix_obj_property):
         """Check a property of a STIX Object against this filter.
@@ -81,7 +80,7 @@ class Filter(collections.namedtuple('Filter', ['property', 'op', 'value'])):
         # If filtering on a timestamp property and the filter value is a string,
         # try to convert the filter value to a datetime instance.
         if isinstance(stix_obj_property, datetime) and \
-                isinstance(self.value, str):
+                    isinstance(self.value, str):
             filter_value = stix2.utils.parse_into_datetime(self.value)
         else:
             filter_value = self.value
@@ -167,21 +166,12 @@ def _check_filter(filter_, stix_obj):
         sub_filter = filter_._replace(property=sub_property)
 
         if isinstance(stix_obj[prop], list):
-            for elem in stix_obj[prop]:
-                if _check_filter(sub_filter, elem) is True:
-                    return True
-            return False
-
+            return any(_check_filter(sub_filter, elem) is True for elem in stix_obj[prop])
         else:
             return _check_filter(sub_filter, stix_obj[prop])
 
     elif isinstance(stix_obj[prop], list):
-        # Check each item in list property to see if it matches
-        for elem in stix_obj[prop]:
-            if filter_._check_property(elem) is True:
-                return True
-        return False
-
+        return any(filter_._check_property(elem) is True for elem in stix_obj[prop])
     else:
         # Check if property matches
         return filter_._check_property(stix_obj[prop])
@@ -206,8 +196,7 @@ class FilterSet(object):
 
     def __iter__(self):
         """Provide iteration functionality of FilterSet."""
-        for f in self._filters:
-            yield f
+        yield from self._filters
 
     def __len__(self):
         """Provide built-in len() utility of FilterSet."""

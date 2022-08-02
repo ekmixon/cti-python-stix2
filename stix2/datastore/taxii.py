@@ -254,10 +254,7 @@ class TAXIICollectionSource(DataSource):
         # parse STIX objects from TAXII returned json
         all_data = [parse(stix_obj, allow_custom=self.allow_custom, version=version) for stix_obj in all_data]
 
-        # check - was added to handle erroneous TAXII servers
-        all_data_clean = [stix_obj for stix_obj in all_data if stix_obj['id'] == stix_id]
-
-        return all_data_clean
+        return [stix_obj for stix_obj in all_data if stix_obj['id'] == stix_id]
 
     def query(self, query=None, version=None, _composite_filters=None):
         """Search and retreive STIX objects based on the complete query
@@ -292,7 +289,7 @@ class TAXIICollectionSource(DataSource):
         taxii_filters = self._parse_taxii_filters(query)
 
         # taxii2client requires query params as keywords
-        taxii_filters_dict = dict((f.property, f.value) for f in taxii_filters)
+        taxii_filters_dict = {f.property: f.value for f in taxii_filters}
 
         # query TAXII collection
         all_data = []
@@ -318,10 +315,10 @@ class TAXIICollectionSource(DataSource):
                     " denied. Received error: ", e,
                 )
 
-        # parse python STIX objects from the STIX object dicts
-        stix_objs = [parse(stix_obj_dict, allow_custom=self.allow_custom, version=version) for stix_obj_dict in all_data]
-
-        return stix_objs
+        return [
+            parse(stix_obj_dict, allow_custom=self.allow_custom, version=version)
+            for stix_obj_dict in all_data
+        ]
 
     def _parse_taxii_filters(self, query):
         """Parse out TAXII filters that the TAXII server can filter on
@@ -348,10 +345,4 @@ class TAXIICollectionSource(DataSource):
             A list of TAXII filters that meet the TAXII filtering parameters.
 
         """
-        taxii_filters = []
-
-        for filter_ in query:
-            if filter_.property in TAXII_FILTERS:
-                taxii_filters.append(filter_)
-
-        return taxii_filters
+        return [filter_ for filter_ in query if filter_.property in TAXII_FILTERS]

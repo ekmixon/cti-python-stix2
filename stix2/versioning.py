@@ -120,12 +120,9 @@ def _is_versionable_type(data):
             )
 
         elif isinstance(data, dict):
-            # Tougher to handle dicts.  We need to consider STIX version,
-            # map to a registered class, and from that get a more complete
-            # picture of its properties.
-
-            cls = stix2.registry.class_for_type(data.get("type"), stix_version)
-            if cls:
+            if cls := stix2.registry.class_for_type(
+                data.get("type"), stix_version
+            ):
                 is_versionable = _VERSIONING_PROPERTIES.issubset(
                     cls._properties,
                 )
@@ -155,31 +152,29 @@ def _check_versionable_object(data):
     :raises ObjectNotVersionableError: If the type was found to support
         versioning but there were insufficient properties on the object
     """
-    if isinstance(data, Mapping):
-        if data.keys() >= _VERSIONING_PROPERTIES:
-            # If the properties all already exist in the object, assume they
-            # are either supported by the type, or are custom properties, and
-            # allow versioning.
-            stix_version = _get_stix_version(data)
-
-        else:
-            is_versionable_type, stix_version = _is_versionable_type(data)
-            if is_versionable_type:
-                # The type supports the versioning properties (or we don't
-                # recognize it and just assume it does).  The question shifts
-                # to whether the object has sufficient properties to create a
-                # new version.  Just require "created" for now.  We need at
-                # least that as a starting point for new version timestamps.
-                is_versionable = "created" in data
-
-                if not is_versionable:
-                    raise ObjectNotVersionableError(data)
-            else:
-                raise TypeNotVersionableError(data)
-
-    else:
+    if not isinstance(data, Mapping):
         raise TypeNotVersionableError(data)
 
+    if data.keys() >= _VERSIONING_PROPERTIES:
+        # If the properties all already exist in the object, assume they
+        # are either supported by the type, or are custom properties, and
+        # allow versioning.
+        stix_version = _get_stix_version(data)
+
+    else:
+        is_versionable_type, stix_version = _is_versionable_type(data)
+        if not is_versionable_type:
+            raise TypeNotVersionableError(data)
+
+        # The type supports the versioning properties (or we don't
+        # recognize it and just assume it does).  The question shifts
+        # to whether the object has sufficient properties to create a
+        # new version.  Just require "created" for now.  We need at
+        # least that as a starting point for new version timestamps.
+        is_versionable = "created" in data
+
+        if not is_versionable:
+            raise ObjectNotVersionableError(data)
     return stix_version
 
 
@@ -226,11 +221,11 @@ def new_version(data, allow_custom=None, **kwargs):
 
             sco_locked_props = cls._id_contributing_properties
 
-    unchangable_properties = set()
-    for prop in itertools.chain(STIX_UNMOD_PROPERTIES, sco_locked_props):
-        if prop in kwargs:
-            unchangable_properties.add(prop)
-    if unchangable_properties:
+    if unchangable_properties := {
+        prop
+        for prop in itertools.chain(STIX_UNMOD_PROPERTIES, sco_locked_props)
+        if prop in kwargs
+    }:
         raise UnmodifiablePropertyError(unchangable_properties)
 
     # Different versioning precision rules in STIX 2.0 vs 2.1, so we need
@@ -320,15 +315,8 @@ def remove_custom_stix(stix_obj):
         # if entire object is custom, discard
         return None
 
-    custom_props = {
-        k: None
-        for k in stix_obj if k.startswith("x_")
-    }
-
-    if custom_props:
-        new_obj = new_version(stix_obj, allow_custom=False, **custom_props)
-
-        return new_obj
+    if custom_props := {k: None for k in stix_obj if k.startswith("x_")}:
+        return new_version(stix_obj, allow_custom=False, **custom_props)
 
     else:
         return stix_obj

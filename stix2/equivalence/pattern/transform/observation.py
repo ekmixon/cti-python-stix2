@@ -153,10 +153,9 @@ class ObservationExpressionTransformer(Transformer):
 
         else:
             raise TypeError(
-                "Not an observation expression: {}: {}".format(
-                    type(ast).__name__, str(ast),
-                ),
+                f"Not an observation expression: {type(ast).__name__}: {str(ast)}"
             )
+
 
         return result, changed
 
@@ -172,9 +171,8 @@ class ObservationExpressionTransformer(Transformer):
             The callback's result
         """
 
-        dispatch_name = self._DISPATCH_NAME_MAP.get(type(ast))
-        if dispatch_name:
-            meth_name = "transform_" + dispatch_name
+        if dispatch_name := self._DISPATCH_NAME_MAP.get(type(ast)):
+            meth_name = f"transform_{dispatch_name}"
             meth = getattr(self, meth_name, self.transform_default)
         else:
             meth = self.transform_default
@@ -366,12 +364,8 @@ class AbsorptionTransformer(
 
             while True:
                 er = next(er_iter, None)
-                if er:
-                    if observation_expression_cmp(ee, er) == 0:
-                        break
-                else:
+                if er and observation_expression_cmp(ee, er) == 0 or not er:
                     break
-
             if not er:
                 result = False
                 break

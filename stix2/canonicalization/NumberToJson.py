@@ -35,8 +35,8 @@ def convert2Es6Format(value):
 #
 # The following line catches the "inf" and "nan" values returned by str(fvalue)
 #
-    if pyDouble.find('n') >= 0:
-        raise ValueError("Invalid JSON number: " + pyDouble)
+    if 'n' in pyDouble:
+        raise ValueError(f"Invalid JSON number: {pyDouble}")
 #
 # Save sign separately, it doesn't have any role in the algorithm
 #
@@ -60,7 +60,7 @@ def convert2Es6Format(value):
 # Supress leading zero on exponents
 #
             pyExpStr = pyExpStr[:2] + pyExpStr[3:]
-        pyDouble = pyDouble[0:q]
+        pyDouble = pyDouble[:q]
         pyExpVal = int(pyExpStr[1:])
 #
 # Split number in pyFirst + pyDot + pyLast
@@ -105,7 +105,7 @@ def convert2Es6Format(value):
         q = pyExpVal
         while q < -1:
             q += 1;
-            pyLast = '0' + pyLast
+            pyLast = f'0{pyLast}'
 #
 # The resulting sub-strings are concatenated
 #

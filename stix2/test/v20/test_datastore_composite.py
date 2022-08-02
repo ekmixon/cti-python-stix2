@@ -31,11 +31,12 @@ def test_add_remove_composite_datasource():
 
 def test_composite_datasource_operations(stix_objs1, stix_objs2):
     BUNDLE1 = dict(
-        id="bundle--%s" % make_id(),
+        id=f"bundle--{make_id()}",
         objects=stix_objs1,
         spec_version="2.0",
         type="bundle",
     )
+
     cds1 = CompositeDataSource()
     ds1_1 = MemorySource(stix_data=BUNDLE1)
     ds1_2 = MemorySource(stix_data=stix_objs2)

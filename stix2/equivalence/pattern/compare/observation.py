@@ -81,9 +81,6 @@ def observation_expression_cmp(expr1, expr2):
     if type1_idx != type2_idx:
         result = generic_cmp(type1_idx, type2_idx)
 
-    # else, both exprs are of same type.
-
-    # If they're simple, use contained comparison expression order
     elif type1 is ObservationExpression:
         result = comparison_expression_cmp(
             expr1.operand, expr2.operand,
@@ -108,9 +105,7 @@ def observation_expression_cmp(expr1, expr2):
         result = generic_cmp(qual1_type_idx, qual2_type_idx)
 
         if result == 0:
-            # Same qualifier type; compare qualifier details
-            qual_cmp = _QUALIFIER_COMPARATORS.get(qual1_type)
-            if qual_cmp:
+            if qual_cmp := _QUALIFIER_COMPARATORS.get(qual1_type):
                 result = qual_cmp(expr1.qualifier, expr2.qualifier)
             else:
                 raise TypeError(

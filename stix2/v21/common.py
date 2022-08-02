@@ -38,15 +38,13 @@ class ExternalReference(_STIXBase21):
         super(ExternalReference, self)._check_object_constraints()
         self._check_at_least_one_property(['description', 'external_id', 'url'])
 
-        if "hashes" in self:
-            if any(
-                hash_ not in self._LEGAL_HASHES
-                for hash_ in self["hashes"]
-            ):
-                raise InvalidValueError(
-                    ExternalReference, "hashes",
-                    "Hash algorithm names must be members of hash-algorithm-ov",
-                )
+        if "hashes" in self and any(
+            hash_ not in self._LEGAL_HASHES for hash_ in self["hashes"]
+        ):
+            raise InvalidValueError(
+                ExternalReference, "hashes",
+                "Hash algorithm names must be members of hash-algorithm-ov",
+            )
 
 
 class KillChainPhase(_STIXBase21):
@@ -165,7 +163,7 @@ class MarkingDefinition(_STIXBase21, _MarkingsMixin):
     ])
 
     def __init__(self, **kwargs):
-        if set(('definition_type', 'definition')).issubset(kwargs.keys()):
+        if {'definition_type', 'definition'}.issubset(kwargs.keys()):
             # Create correct marking type object
             try:
                 marking_type = OBJ_MAP_MARKING[kwargs['definition_type']]

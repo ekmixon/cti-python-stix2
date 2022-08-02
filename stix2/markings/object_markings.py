@@ -66,8 +66,7 @@ def remove_markings(obj, marking):
     if any(x not in obj['object_marking_refs'] for x in marking):
         raise exceptions.MarkingNotFoundError(obj, marking)
 
-    new_markings = [x for x in object_markings if x not in marking]
-    if new_markings:
+    if new_markings := [x for x in object_markings if x not in marking]:
         return new_version(obj, object_marking_refs=new_markings, allow_custom=True)
     else:
         return new_version(obj, object_marking_refs=None, allow_custom=True)

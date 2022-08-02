@@ -63,16 +63,7 @@ def test_id_property_wrong_type():
     assert str(excinfo.value) == "must start with 'my-type--'."
 
 
-@pytest.mark.parametrize(
-    "value", [
-        'my-type--foo',
-        # Not a v4 UUID
-        'my-type--00000000-0000-0000-0000-000000000000',
-        'my-type--' + str(uuid.uuid1()),
-        'my-type--' + str(uuid.uuid3(uuid.NAMESPACE_DNS, "example.org")),
-        'my-type--' + str(uuid.uuid5(uuid.NAMESPACE_DNS, "example.org")),
-    ],
-)
+@pytest.mark.parametrize("value", ['my-type--foo', 'my-type--00000000-0000-0000-0000-000000000000', f'my-type--{str(uuid.uuid1())}', 'my-type--' + str(uuid.uuid3(uuid.NAMESPACE_DNS, "example.org")), 'my-type--' + str(uuid.uuid5(uuid.NAMESPACE_DNS, "example.org"))])
 def test_id_property_not_a_valid_hex_uuid(value):
     with pytest.raises(ValueError):
         ID_PROP.clean(value)

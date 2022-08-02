@@ -127,50 +127,47 @@ def ipv4_addr(comp_expr):
     Args:
         comp_expr: A _ComparisonExpression object whose type is ipv4-addr.
     """
-    if _path_is(comp_expr.lhs, ("value",)):
-        value = comp_expr.rhs.value
-        slash_idx = value.find("/")
-        is_cidr = slash_idx >= 0
+    if not _path_is(comp_expr.lhs, ("value",)):
+        return
+    value = comp_expr.rhs.value
+    slash_idx = value.find("/")
+    is_cidr = slash_idx >= 0
 
-        if is_cidr:
-            ip_str = value[:slash_idx]
-        else:
-            ip_str = value
+    ip_str = value[:slash_idx] if is_cidr else value
+    try:
+        ip_bytes = socket.inet_aton(ip_str)
+    except OSError:
+        # illegal IPv4 address string
+        return
 
+    if is_cidr:
         try:
-            ip_bytes = socket.inet_aton(ip_str)
-        except OSError:
-            # illegal IPv4 address string
+            prefix_size = int(value[slash_idx+1:])
+        except ValueError:
+            # illegal prefix size
             return
 
-        if is_cidr:
-            try:
-                prefix_size = int(value[slash_idx+1:])
-            except ValueError:
-                # illegal prefix size
-                return
+        if prefix_size < 0 or prefix_size > 32:
+            # illegal prefix size
+            return
 
-            if prefix_size < 0 or prefix_size > 32:
-                # illegal prefix size
-                return
+    if not is_cidr or prefix_size == 32:
+        # If a CIDR with prefix size 32, drop the prefix size since it's
+        # redundant.  Run the address bytes through inet_ntoa() in case it
+        # would adjust the format (e.g. drop leading zeros:
+        # 1.2.3.004 => 1.2.3.4).
+        value = socket.inet_ntoa(ip_bytes)
 
-        if not is_cidr or prefix_size == 32:
-            # If a CIDR with prefix size 32, drop the prefix size since it's
-            # redundant.  Run the address bytes through inet_ntoa() in case it
-            # would adjust the format (e.g. drop leading zeros:
-            # 1.2.3.004 => 1.2.3.4).
-            value = socket.inet_ntoa(ip_bytes)
+    else:
+        # inet_aton() gives an immutable 'bytes' value; we need a value
+        # we can change.
+        ip_bytes = bytearray(ip_bytes)
+        _mask_bytes(ip_bytes, prefix_size)
 
-        else:
-            # inet_aton() gives an immutable 'bytes' value; we need a value
-            # we can change.
-            ip_bytes = bytearray(ip_bytes)
-            _mask_bytes(ip_bytes, prefix_size)
+        ip_str = socket.inet_ntoa(ip_bytes)
+        value = f"{ip_str}/{str(prefix_size)}"
 
-            ip_str = socket.inet_ntoa(ip_bytes)
-            value = ip_str + "/" + str(prefix_size)
-
-        comp_expr.rhs.value = value
+    comp_expr.rhs.value = value
 
 
 def ipv6_addr(comp_expr):
@@ -188,47 +185,44 @@ def ipv6_addr(comp_expr):
     Args:
         comp_expr: A _ComparisonExpression object whose type is ipv6-addr.
     """
-    if _path_is(comp_expr.lhs, ("value",)):
-        value = comp_expr.rhs.value
-        slash_idx = value.find("/")
-        is_cidr = slash_idx >= 0
+    if not _path_is(comp_expr.lhs, ("value",)):
+        return
+    value = comp_expr.rhs.value
+    slash_idx = value.find("/")
+    is_cidr = slash_idx >= 0
 
-        if is_cidr:
-            ip_str = value[:slash_idx]
-        else:
-            ip_str = value
+    ip_str = value[:slash_idx] if is_cidr else value
+    try:
+        ip_bytes = socket.inet_pton(socket.AF_INET6, ip_str)
+    except OSError:
+        # illegal IPv6 address string
+        return
 
+    if is_cidr:
         try:
-            ip_bytes = socket.inet_pton(socket.AF_INET6, ip_str)
-        except OSError:
-            # illegal IPv6 address string
+            prefix_size = int(value[slash_idx+1:])
+        except ValueError:
+            # illegal prefix size
             return
 
-        if is_cidr:
-            try:
-                prefix_size = int(value[slash_idx+1:])
-            except ValueError:
-                # illegal prefix size
-                return
+        if prefix_size < 0 or prefix_size > 128:
+            # illegal prefix size
+            return
 
-            if prefix_size < 0 or prefix_size > 128:
-                # illegal prefix size
-                return
+    if not is_cidr or prefix_size == 128:
+        # If a CIDR with prefix size 128, drop the prefix size since it's
+        # redundant.  Run the IP address through inet_ntop() so it can
+        # reformat with the double-colons (and make any other adjustments)
+        # if necessary.
+        value = socket.inet_ntop(socket.AF_INET6, ip_bytes)
 
-        if not is_cidr or prefix_size == 128:
-            # If a CIDR with prefix size 128, drop the prefix size since it's
-            # redundant.  Run the IP address through inet_ntop() so it can
-            # reformat with the double-colons (and make any other adjustments)
-            # if necessary.
-            value = socket.inet_ntop(socket.AF_INET6, ip_bytes)
+    else:
+        # inet_pton() gives an immutable 'bytes' value; we need a value
+        # we can change.
+        ip_bytes = bytearray(ip_bytes)
+        _mask_bytes(ip_bytes, prefix_size)
 
-        else:
-            # inet_pton() gives an immutable 'bytes' value; we need a value
-            # we can change.
-            ip_bytes = bytearray(ip_bytes)
-            _mask_bytes(ip_bytes, prefix_size)
+        ip_str = socket.inet_ntop(socket.AF_INET6, ip_bytes)
+        value = f"{ip_str}/{str(prefix_size)}"
 
-            ip_str = socket.inet_ntop(socket.AF_INET6, ip_bytes)
-            value = ip_str + "/" + str(prefix_size)
-
-        comp_expr.rhs.value = value
+    comp_expr.rhs.value = value

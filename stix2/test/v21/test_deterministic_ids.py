@@ -21,18 +21,14 @@ SCO_DET_ID_NAMESPACE = uuid.UUID("00abedb4-aa42-466c-9c01-fed23315a9b7")
 def _uuid_from_id(id_):
     dd_idx = id_.index("--")
     uuid_str = id_[dd_idx+2:]
-    uuid_ = uuid.UUID(uuid_str)
-
-    return uuid_
+    return uuid.UUID(uuid_str)
 
 
 def _make_uuid5(name):
     """
     Make a STIX 2.1+ compliant UUIDv5 from a "name".
     """
-    uuid_ = uuid.uuid5(SCO_DET_ID_NAMESPACE, name)
-
-    return uuid_
+    return uuid.uuid5(SCO_DET_ID_NAMESPACE, name)
 
 
 def test_no_contrib_props_defined():

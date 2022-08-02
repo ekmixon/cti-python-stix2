@@ -182,8 +182,7 @@ class Environment(DataStoreMixin):
                 found.
 
         """
-        creator_id = obj.get('created_by_ref', '')
-        if creator_id:
+        if creator_id := obj.get('created_by_ref', ''):
             return self.get(creator_id)
         else:
             return None

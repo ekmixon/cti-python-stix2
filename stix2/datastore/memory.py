@@ -82,10 +82,7 @@ class _ObjectFamily(object):
             self.latest_version = obj
 
     def __str__(self):
-        return "<<{}; latest={}>>".format(
-            self.all_versions,
-            self.latest_version["modified"],
-        )
+        return f'<<{self.all_versions}; latest={self.latest_version["modified"]}>>'
 
     def __repr__(self):
         return str(self)
@@ -271,8 +268,7 @@ class MemorySource(DataSource):
         """
         stix_obj = None
 
-        mapped_value = self._data.get(stix_id)
-        if mapped_value:
+        if mapped_value := self._data.get(stix_id):
             if isinstance(mapped_value, _ObjectFamily):
                 stix_obj = mapped_value.latest_version
             else:
@@ -304,8 +300,7 @@ class MemorySource(DataSource):
 
         """
         results = []
-        mapped_value = self._data.get(stix_id)
-        if mapped_value:
+        if mapped_value := self._data.get(stix_id):
             if isinstance(mapped_value, _ObjectFamily):
                 stix_objs_to_filter = mapped_value.all_versions.values()
             else:
@@ -354,10 +349,7 @@ class MemorySource(DataSource):
             for value in self._data.values()
         )
 
-        # Apply STIX common property filters.
-        all_data = list(apply_common_filters(all_objs, query))
-
-        return all_data
+        return list(apply_common_filters(all_objs, query))
 
     def load_from_file(self, file_path, version=None, encoding='utf-8'):
         with io.open(os.path.abspath(file_path), "r", encoding=encoding) as f:

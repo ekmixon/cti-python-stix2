@@ -110,14 +110,20 @@ def test_composite_datastore_add_data_source_raises_error():
     with pytest.raises(TypeError) as excinfo:
         ind = "indicator--00000000-0000-4000-8000-000000000001"
         CompositeDataSource().add_data_source(ind)
-    assert "DataSource (to be added) is not of type stix2.DataSource. DataSource type is '{}'".format(type(ind)) == str(excinfo.value)
+    assert (
+        f"DataSource (to be added) is not of type stix2.DataSource. DataSource type is '{type(ind)}'"
+        == str(excinfo.value)
+    )
 
 
 def test_composite_datastore_add_data_sources_raises_error():
     with pytest.raises(TypeError) as excinfo:
         ind = "indicator--00000000-0000-4000-8000-000000000001"
         CompositeDataSource().add_data_sources(ind)
-    assert "DataSource (to be added) is not of type stix2.DataSource. DataSource type is '{}'".format(type(ind)) == str(excinfo.value)
+    assert (
+        f"DataSource (to be added) is not of type stix2.DataSource. DataSource type is '{type(ind)}'"
+        == str(excinfo.value)
+    )
 
 
 def test_composite_datastore_no_datasource():

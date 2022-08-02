@@ -67,9 +67,7 @@ def object_equivalence(
         obj1, obj2, prop_scores, ds1, ds2, ignore_spec_version,
         versioning_checks, max_depth, **weight_dict
     )
-    if similarity_result >= threshold:
-        return True
-    return False
+    return similarity_result >= threshold
 
 
 def object_similarity(
@@ -164,21 +162,20 @@ def object_similarity(
                     elif comp_funct == partial_location_distance:
                         threshold = weights[type1]["threshold"]
                         contributing_score = w * comp_funct(obj1["latitude"], obj1["longitude"], obj2["latitude"], obj2["longitude"], threshold)
-                    elif comp_funct == reference_check or comp_funct == list_reference_check:
-                        if max_depth > 0:
-                            weights["_internal"]["max_depth"] = max_depth - 1
-                            ds1, ds2 = weights["_internal"]["ds1"], weights["_internal"]["ds2"]
-                            if _datastore_check(ds1, ds2):
-                                contributing_score = w * comp_funct(obj1[prop], obj2[prop], ds1, ds2, **weights)
-                            elif comp_funct == reference_check:
-                                comp_funct = exact_match
-                                contributing_score = w * comp_funct(obj1[prop], obj2[prop])
-                            elif comp_funct == list_reference_check:
-                                comp_funct = partial_list_based
-                                contributing_score = w * comp_funct(obj1[prop], obj2[prop])
-                            prop_scores[prop]["check_type"] = comp_funct.__name__
-                        else:
+                    elif comp_funct in [reference_check, list_reference_check]:
+                        if max_depth <= 0:
                             continue  # prevent excessive recursion
+                        weights["_internal"]["max_depth"] = max_depth - 1
+                        ds1, ds2 = weights["_internal"]["ds1"], weights["_internal"]["ds2"]
+                        if _datastore_check(ds1, ds2):
+                            contributing_score = w * comp_funct(obj1[prop], obj2[prop], ds1, ds2, **weights)
+                        elif comp_funct == reference_check:
+                            comp_funct = exact_match
+                            contributing_score = w * comp_funct(obj1[prop], obj2[prop])
+                        elif comp_funct == list_reference_check:
+                            comp_funct = partial_list_based
+                            contributing_score = w * comp_funct(obj1[prop], obj2[prop])
+                        prop_scores[prop]["check_type"] = comp_funct.__name__
                         weights["_internal"]["max_depth"] = max_depth
                     else:
                         contributing_score = w * comp_funct(obj1[prop], obj2[prop])
@@ -202,10 +199,7 @@ def object_similarity(
                 matching_score, sum_weights = method(obj1, obj2, **weights[type1])
             logger.debug("Matching Score: %s, Sum of Weights: %s", matching_score, sum_weights)
 
-    if sum_weights <= 0:
-        return 0
-    equivalence_score = (matching_score / sum_weights) * 100.0
-    return equivalence_score
+    return 0 if sum_weights <= 0 else (matching_score / sum_weights) * 100.0
 
 
 def check_property_present(prop, obj1, obj2):
@@ -272,9 +266,7 @@ def exact_match(val1, val2):
         float: 1.0 if the value matches exactly, 0.0 otherwise.
 
     """
-    result = 0.0
-    if val1 == val2:
-        result = 1.0
+    result = 1.0 if val1 == val2 else 0.0
     logger.debug("--\t\texact_match '%s' '%s'\tresult: '%s'", val1, val2, result)
     return result
 
@@ -334,16 +326,22 @@ def partial_external_reference_based(ext_refs1, ext_refs2):
         url_match = False
         source_name = None
 
-        if check_property_present("source_name", ext_ref1, ext_ref2):
-            if ext_ref1["source_name"] == ext_ref2["source_name"]:
-                source_name = ext_ref1["source_name"]
-                sn_match = True
-        if check_property_present("external_id", ext_ref1, ext_ref2):
-            if ext_ref1["external_id"] == ext_ref2["external_id"]:
-                ei_match = True
-        if check_property_present("url", ext_ref1, ext_ref2):
-            if ext_ref1["url"] == ext_ref2["url"]:
-                url_match = True
+        if (
+            check_property_present("source_name", ext_ref1, ext_ref2)
+            and ext_ref1["source_name"] == ext_ref2["source_name"]
+        ):
+            source_name = ext_ref1["source_name"]
+            sn_match = True
+        if (
+            check_property_present("external_id", ext_ref1, ext_ref2)
+            and ext_ref1["external_id"] == ext_ref2["external_id"]
+        ):
+            ei_match = True
+        if (
+            check_property_present("url", ext_ref1, ext_ref2)
+            and ext_ref1["url"] == ext_ref2["url"]
+        ):
+            url_match = True
 
         # Special case: if source_name is a STIX defined name and either
         # external_id or url match then its a perfect match and other entries
@@ -414,11 +412,8 @@ def _versioned_checks(ref1, ref2, ds1, ds2, **weights):
             versioning_checks=versioning_checks,
             max_depth=max_depth, **weights,
         )
-        if ref1 not in results:
+        if ref1 not in results or result > results[ref1]["value"]:
             results[ref1] = {"matched": ref2, "value": result}
-        elif result > results[ref1]["value"]:
-            results[ref1] = {"matched": ref2, "value": result}
-
     result = results.get(ref1, {}).get("value", 0.0)
     logger.debug(
         "--\t\t_versioned_checks '%s' '%s'\tresult: '%s'",
@@ -474,23 +469,14 @@ def list_reference_check(refs1, refs2, ds1, ds2, **weights):
         if type1 == type2:
             score = reference_check(ref1, ref2, ds1, ds2, **weights)
 
-            if ref1 not in results:
+            if ref1 not in results or score > results[ref1]["value"]:
                 results[ref1] = {"matched": ref2, "value": score}
-            elif score > results[ref1]["value"]:
-                results[ref1] = {"matched": ref2, "value": score}
-
-            if ref2 not in results:
+            if ref2 not in results or score > results[ref2]["value"]:
                 results[ref2] = {"matched": ref1, "value": score}
-            elif score > results[ref2]["value"]:
-                results[ref2] = {"matched": ref1, "value": score}
-
-    result = 0.0
     total_sum = sum(x["value"] for x in results.values())
     max_score = len(results)
 
-    if max_score > 0:
-        result = total_sum / max_score
-
+    result = total_sum / max_score if max_score > 0 else 0.0
     logger.debug(
         "--\t\tlist_reference_check '%s' '%s'\ttotal_sum: '%s'\tmax_score: '%s'\tresult: '%s'",
         refs1, refs2, total_sum, max_score, result,
@@ -499,12 +485,9 @@ def list_reference_check(refs1, refs2, ds1, ds2, **weights):
 
 
 def _datastore_check(ds1, ds2):
-    if (
-        issubclass(ds1.__class__, (DataStoreMixin, DataSource)) or
-        issubclass(ds2.__class__, (DataStoreMixin, DataSource))
-    ):
-        return True
-    return False
+    return issubclass(
+        ds1.__class__, (DataStoreMixin, DataSource)
+    ) or issubclass(ds2.__class__, (DataStoreMixin, DataSource))
 
 
 def _bucket_per_type(graph, mode="type"):

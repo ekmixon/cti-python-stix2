@@ -111,7 +111,7 @@ def test_external_reference_offline():
     assert str(ref) == OFFLINE
     assert re.match("ExternalReference\\(source_name=u?'ACME Threat Intel', description=u?'Threat report'\\)", repr(ref))
     # Yikes! This works
-    assert eval("stix2." + repr(ref)) == ref
+    assert eval(f"stix2.{repr(ref)}") == ref
 
 
 def test_external_reference_source_required():

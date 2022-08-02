@@ -88,10 +88,7 @@ class AuthSet(object):
         return self.__type
 
     def __repr__(self):
-        return "{}list: {}".format(
-            "white" if self.auth_type == AuthSet.WHITE else "black",
-            self.values,
-        )
+        return f'{"white" if self.auth_type == AuthSet.WHITE else "black"}list: {self.values}'
 
 
 # A fixed, reusable AuthSet which accepts anything.  It came in handy.
@@ -122,13 +119,10 @@ def _update_allow(allow_set, value):
             allow_set.update(value)
         else:
             allow_set.add(value)
+    elif adding_seq:
+        allow_set.intersection_update(value)
     else:
-        # strangely, the "&=" operator requires a set on the RHS
-        # whereas the method allows any iterable.
-        if adding_seq:
-            allow_set.intersection_update(value)
-        else:
-            allow_set.intersection_update({value})
+        allow_set.intersection_update({value})
 
     return allow_set
 
@@ -324,10 +318,7 @@ def _check_object_from_file(query, filepath, allow_custom, version, encoding):
     if stix_obj["type"] == "bundle":
         stix_obj = stix_obj["objects"][0]
 
-    # check against other filters, add if match
-    result = next(apply_common_filters([stix_obj], query), None)
-
-    return result
+    return next(apply_common_filters([stix_obj], query), None)
 
 
 def _is_versioned_type_dir(type_path, type_name):
@@ -353,11 +344,14 @@ def _is_versioned_type_dir(type_path, type_name):
             files
     """
     id_regex = re.compile(
-        r"^" + re.escape(type_name) +
-        r"--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"
-        r"-[0-9a-f]{12}$",
+        (
+            f"^{re.escape(type_name)}"
+            + r"--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"
+            r"-[0-9a-f]{12}$"
+        ),
         re.I,
     )
+
 
     for entry in os.listdir(type_path):
         s = os.stat(os.path.join(type_path, entry))
@@ -416,12 +410,13 @@ def _search_versioned(query, type_path, auth_ids, allow_custom, version, encodin
             version_path = os.path.join(id_path, version_file)
 
             try:
-                stix_obj = _check_object_from_file(
-                    query, version_path,
-                    allow_custom, version,
+                if stix_obj := _check_object_from_file(
+                    query,
+                    version_path,
+                    allow_custom,
+                    version,
                     encoding,
-                )
-                if stix_obj:
+                ):
                     results.append(stix_obj)
             except IOError as e:
                 if e.errno != errno.ENOENT:
@@ -476,11 +471,13 @@ def _search_unversioned(
         id_path = os.path.join(type_path, id_file)
 
         try:
-            stix_obj = _check_object_from_file(
-                query, id_path, allow_custom,
-                version, encoding,
-            )
-            if stix_obj:
+            if stix_obj := _check_object_from_file(
+                query,
+                id_path,
+                allow_custom,
+                version,
+                encoding,
+            ):
                 results.append(stix_obj)
         except IOError as e:
             if e.errno != errno.ENOENT:
@@ -567,7 +564,7 @@ class FileSystemSink(DataSink):
             filename = stix_obj["id"]
             obj_dir = type_dir
 
-        file_path = os.path.join(obj_dir, filename + ".json")
+        file_path = os.path.join(obj_dir, f"{filename}.json")
 
         if not os.path.exists(obj_dir):
             os.makedirs(obj_dir)
@@ -582,7 +579,7 @@ class FileSystemSink(DataSink):
                 stix_obj = v20.Bundle(stix_obj, allow_custom=self.allow_custom)
 
         if os.path.isfile(file_path):
-            raise DataSourceError("Attempted to overwrite file (!) at: {}".format(file_path))
+            raise DataSourceError(f"Attempted to overwrite file (!) at: {file_path}")
 
         with io.open(file_path, mode='w', encoding=encoding) as f:
             fp_serialize(stix_obj, f, pretty=True, encoding=encoding, ensure_ascii=False)
@@ -656,7 +653,9 @@ class FileSystemSource(DataSource):
         self.encoding = encoding
 
         if not os.path.exists(self._stix_dir):
-            raise ValueError("directory path for STIX data does not exist: %s" % self._stix_dir)
+            raise ValueError(
+                f"directory path for STIX data does not exist: {self._stix_dir}"
+            )
 
     @property
     def stix_dir(self):
@@ -679,21 +678,22 @@ class FileSystemSource(DataSource):
                 a python STIX object and then returned
 
         """
-        all_data = self.all_versions(stix_id, version=version, _composite_filters=_composite_filters)
+        if not (
+            all_data := self.all_versions(
+                stix_id, version=version, _composite_filters=_composite_filters
+            )
+        ):
+            return None
 
-        if all_data:
-            # Simple check for a versioned STIX type: see if the objects have a
-            # "modified" property.  (Need only check one, since they are all of
-            # the same type.)
-            is_versioned = "modified" in all_data[0]
-            if is_versioned:
-                stix_obj = sorted(all_data, key=lambda k: k['modified'])[-1]
-            else:
-                stix_obj = all_data[0]
-        else:
-            stix_obj = None
-
-        return stix_obj
+        # Simple check for a versioned STIX type: see if the objects have a
+        # "modified" property.  (Need only check one, since they are all of
+        # the same type.)
+        is_versioned = "modified" in all_data[0]
+        return (
+            sorted(all_data, key=lambda k: k['modified'])[-1]
+            if is_versioned
+            else all_data[0]
+        )
 
     def all_versions(self, stix_id, version=None, _composite_filters=None):
         """Retrieve STIX object from file directory via STIX ID, all versions.
@@ -755,8 +755,7 @@ class FileSystemSource(DataSource):
         )
         for type_dir in type_dirs:
             type_path = os.path.join(self._stix_dir, type_dir)
-            type_is_versioned = _is_versioned_type_dir(type_path, type_dir)
-            if type_is_versioned:
+            if type_is_versioned := _is_versioned_type_dir(type_path, type_dir):
                 type_results = _search_versioned(
                     query, type_path, auth_ids,
                     self.allow_custom, version,

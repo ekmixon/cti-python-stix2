@@ -34,7 +34,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 project = 'stix2'
-copyright = '{}, OASIS Open'.format(datetime.date.today().year)
+copyright = f'{datetime.date.today().year}, OASIS Open'
 author = 'OASIS Open'
 
 version = __version__
@@ -66,7 +66,7 @@ object_default_sem_eq_weights = object_default_sem_eq_weights.replace('\n', '\n 
 object_default_sem_eq_weights = object_default_sem_eq_weights.replace('               "', '               ')
 object_default_sem_eq_weights = object_default_sem_eq_weights.replace('"\n', '\n')
 with open('similarity_weights.rst', 'w') as f:
-    f.write(".. code-block:: python\n\n   {}\n\n".format(object_default_sem_eq_weights))
+    f.write(f".. code-block:: python\n\n   {object_default_sem_eq_weights}\n\n")
 
 
 def get_property_type(prop):
@@ -115,13 +115,13 @@ class STIXPropertyDocumenter(ClassDocumenter):
             # Add metadata about the property
             prop_type = get_property_type(prop)
             if prop_type == 'List':
-                prop_type = 'List of %ss' % get_property_type(prop.contained)
+                prop_type = f'List of {get_property_type(prop.contained)}s'
             if prop.required:
                 prop_type += ', required'
             if 'Timestamp' in prop_type and hasattr(prop, 'default'):
                 prop_type += ', default: current date/time'
-            prop_str = '**%s** (*%s*)' % (prop_name, prop_type)
-            self.add_line('    - %s' % prop_str, '<stixattr>')
+            prop_str = f'**{prop_name}** (*{prop_type}*)'
+            self.add_line(f'    - {prop_str}', '<stixattr>')
 
         self.add_line('', '<stixattr>')
 

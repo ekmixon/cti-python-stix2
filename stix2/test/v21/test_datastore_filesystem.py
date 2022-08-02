@@ -106,9 +106,9 @@ def rel_fs_store():
 
     for o in stix_objs:
         filepath = os.path.join(
-            FS_PATH, o.type, o.id,
-            _timestamp2filename(o.modified) + '.json',
+            FS_PATH, o.type, o.id, f'{_timestamp2filename(o.modified)}.json'
         )
+
 
         # Some test-scoped fixtures (e.g. fs_store) delete all campaigns, so by
         # the time this module-scoped fixture tears itself down, it may find
@@ -242,9 +242,12 @@ def test_filesystem_sink_add_python_stix_object(fs_sink, fs_source):
     fs_sink.add(camp1)
 
     filepath = os.path.join(
-        FS_PATH, "campaign", camp1.id,
-        _timestamp2filename(camp1.modified) + ".json",
+        FS_PATH,
+        "campaign",
+        camp1.id,
+        f"{_timestamp2filename(camp1.modified)}.json",
     )
+
     assert os.path.exists(filepath)
 
     camp1_r = fs_source.get(camp1.id)
@@ -533,9 +536,12 @@ def test_filesystem_store_add(fs_store):
     assert camp1_r.name == camp1.name
 
     filepath = os.path.join(
-        FS_PATH, "campaign", camp1_r.id,
-        _timestamp2filename(camp1_r.modified) + ".json",
+        FS_PATH,
+        "campaign",
+        camp1_r.id,
+        f"{_timestamp2filename(camp1_r.modified)}.json",
     )
+
 
     # remove
     os.remove(filepath)
@@ -552,9 +558,12 @@ def test_filesystem_store_add_as_bundle():
     fs_store.add(camp1)
 
     filepath = os.path.join(
-        FS_PATH, "campaign", camp1.id,
-        _timestamp2filename(camp1.modified) + ".json",
+        FS_PATH,
+        "campaign",
+        camp1.id,
+        f"{_timestamp2filename(camp1.modified)}.json",
     )
+
 
     with open(filepath) as bundle_file:
         assert '"type": "bundle"' in bundle_file.read()

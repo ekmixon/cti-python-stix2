@@ -39,7 +39,7 @@ class DataSourceError(Exception):
 
     def __str__(self):
         if self.root_exception:
-            return "{} \"{}\"".format(self.message, self.root_exception)
+            return f'{self.message} \"{self.root_exception}\"'
         else:
             return self.message
 
@@ -318,8 +318,7 @@ class DataSource(metaclass=ABCMeta):
             `created_by_ref` property or the object's creator cannot be found.
 
         """
-        creator_id = obj.get('created_by_ref', '')
-        if creator_id:
+        if creator_id := obj.get('created_by_ref', ''):
             return self.get(creator_id)
         else:
             return None
@@ -409,7 +408,7 @@ class DataSource(metaclass=ABCMeta):
         filter_list = FilterSet(filters)
 
         for i in ids:
-            results.extend(self.query([f for f in filter_list] + [Filter('id', '=', i)]))
+            results.extend(self.query(list(filter_list) + [Filter('id', '=', i)]))
 
         return results
 
@@ -475,8 +474,7 @@ class CompositeDataSource(DataSource):
 
         # for every configured Data Source, call its retrieve handler
         for ds in self.data_sources:
-            data = ds.get(stix_id=stix_id, _composite_filters=all_filters)
-            if data:
+            if data := ds.get(stix_id=stix_id, _composite_filters=all_filters):
                 all_data.append(data)
 
         # Search for latest version
@@ -527,7 +525,7 @@ class CompositeDataSource(DataSource):
 
         # remove exact duplicates (where duplicates are STIX 2.0 objects
         # with the same 'id' and 'modified' values)
-        if len(all_data) > 0:
+        if all_data:
             all_data = deduplicate(all_data)
 
         return all_data
@@ -572,7 +570,7 @@ class CompositeDataSource(DataSource):
 
         # remove exact duplicates (where duplicates are STIX 2.0
         # objects with the same 'id' and 'modified' values)
-        if len(all_data) > 0:
+        if all_data:
             all_data = deduplicate(all_data)
 
         return all_data
@@ -608,7 +606,7 @@ class CompositeDataSource(DataSource):
 
         # remove exact duplicates (where duplicates are STIX 2.0
         # objects with the same 'id' and 'modified' values)
-        if len(results) > 0:
+        if results:
             results = deduplicate(results)
 
         return results
@@ -648,7 +646,7 @@ class CompositeDataSource(DataSource):
 
         # remove exact duplicates (where duplicates are STIX 2.0
         # objects with the same 'id' and 'modified' values)
-        if len(results) > 0:
+        if results:
             results = deduplicate(results)
 
         return results
@@ -661,13 +659,12 @@ class CompositeDataSource(DataSource):
                 to the CompositeDataSource
 
         """
-        if issubclass(data_source.__class__, DataSource):
-            if data_source.id not in [ds_.id for ds_ in self.data_sources]:
-                # check DataSource not already attached CompositeDataSource
-                self.data_sources.append(data_source)
-        else:
+        if not issubclass(data_source.__class__, DataSource):
             raise TypeError("DataSource (to be added) is not of type stix2.DataSource. DataSource type is '%s'" % type(data_source))
 
+        if data_source.id not in [ds_.id for ds_ in self.data_sources]:
+            # check DataSource not already attached CompositeDataSource
+            self.data_sources.append(data_source)
         return
 
     def add_data_sources(self, data_sources):

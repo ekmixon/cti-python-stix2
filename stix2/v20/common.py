@@ -19,14 +19,7 @@ def _should_set_millisecond(cr, marking_type):
     if marking_type == TLPMarking:
         return True
     # otherwise,  precision is kept from how it was given
-    if isinstance(cr, str):
-        if '.' in cr:
-            return True
-        else:
-            return False
-    if cr.precision == 'millisecond':
-        return True
-    return False
+    return '.' in cr if isinstance(cr, str) else cr.precision == 'millisecond'
 
 
 class ExternalReference(_STIXBase20):
@@ -130,19 +123,20 @@ class MarkingDefinition(_STIXBase20, _MarkingsMixin):
     ])
 
     def __init__(self, **kwargs):
-        if set(('definition_type', 'definition')).issubset(kwargs.keys()):
+        if {'definition_type', 'definition'}.issubset(kwargs.keys()):
             # Create correct marking type object
             try:
                 marking_type = OBJ_MAP_MARKING[kwargs['definition_type']]
             except KeyError:
                 raise ValueError("definition_type must be a valid marking type")
 
-            if 'created' in kwargs:
-                if _should_set_millisecond(kwargs['created'], marking_type):
-                    self._properties = copy.deepcopy(self._properties)
-                    self._properties.update([
-                        ('created', TimestampProperty(default=lambda: NOW, precision='millisecond')),
-                    ])
+            if 'created' in kwargs and _should_set_millisecond(
+                kwargs['created'], marking_type
+            ):
+                self._properties = copy.deepcopy(self._properties)
+                self._properties.update([
+                    ('created', TimestampProperty(default=lambda: NOW, precision='millisecond')),
+                ])
 
             if not isinstance(kwargs['definition'], marking_type):
                 defn = _get_dict(kwargs['definition'])

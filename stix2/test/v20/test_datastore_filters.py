@@ -137,7 +137,7 @@ def test_filter_value_type_check():
     assert "is not supported. The type must be a Python immutable type or dictionary" in str(excinfo.value)
 
     with pytest.raises(TypeError) as excinfo:
-        Filter("type", "=", set([16, 23]))
+        Filter("type", "=", {16, 23})
     assert "'<class 'set'>'" in str(excinfo.value)
     assert "is not supported. The type must be a Python immutable type or dictionary" in str(excinfo.value)
 
@@ -213,7 +213,7 @@ def test_apply_common_filters4():
 def test_apply_common_filters5():
     # "Return any object whose not revoked"
     resp = list(apply_common_filters(stix_objs, [filters[5]]))
-    assert len(resp) == 0
+    assert not resp
 
     resp = list(apply_common_filters(real_stix_objs, [filters[5]]))
     assert len(resp) == 4
@@ -265,28 +265,28 @@ def test_apply_common_filters9():
 def test_apply_common_filters10():
     # "Return any object that matches marking-definition--613f2e26-0000-4000-8000-b8e91df99dc9 in object_marking_refs" (None)
     resp = list(apply_common_filters(stix_objs, [filters[11]]))
-    assert len(resp) == 0
+    assert not resp
 
     resp = list(apply_common_filters(real_stix_objs, [filters[11]]))
-    assert len(resp) == 0
+    assert not resp
 
 
 def test_apply_common_filters11():
     # "Return any object that contains description in its selectors" (None)
     resp = list(apply_common_filters(stix_objs, [filters[12]]))
-    assert len(resp) == 0
+    assert not resp
 
     resp = list(apply_common_filters(real_stix_objs, [filters[12]]))
-    assert len(resp) == 0
+    assert not resp
 
 
 def test_apply_common_filters12():
     # "Return any object that matches CVE in source_name" (None, case sensitive)
     resp = list(apply_common_filters(stix_objs, [filters[13]]))
-    assert len(resp) == 0
+    assert not resp
 
     resp = list(apply_common_filters(real_stix_objs, [filters[13]]))
-    assert len(resp) == 0
+    assert not resp
 
 
 def test_apply_common_filters13():

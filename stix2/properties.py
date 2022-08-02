@@ -61,9 +61,8 @@ def _validate_id(id_, spec_version, required_prefix):
         add it if it is important.  Pass None to skip the prefix check.
     :raises ValueError: If there are any errors with the identifier
     """
-    if required_prefix:
-        if not id_.startswith(required_prefix):
-            raise ValueError("must start with '{}'.".format(required_prefix))
+    if required_prefix and not id_.startswith(required_prefix):
+        raise ValueError(f"must start with '{required_prefix}'.")
 
     try:
         if required_prefix:
@@ -97,13 +96,12 @@ def _validate_type(type_, spec_version):
                 "characters a-z (lowercase ASCII), 0-9, and hyphen (-)." %
                 type_,
             )
-    else:  # 2.1+
-        if not re.match(TYPE_21_REGEX, type_):
-            raise ValueError(
-                "Invalid type name '%s': must only contain the "
-                "characters a-z (lowercase ASCII), 0-9, and hyphen (-) "
-                "and must begin with an a-z character" % type_,
-            )
+    elif not re.match(TYPE_21_REGEX, type_):
+        raise ValueError(
+            "Invalid type name '%s': must only contain the "
+            "characters a-z (lowercase ASCII), 0-9, and hyphen (-) "
+            "and must begin with an a-z character" % type_,
+        )
 
     if len(type_) < 3 or len(type_) > 250:
         raise ValueError(
@@ -161,7 +159,7 @@ class Property(object):
 
     def _default_clean(self, value):
         if value != self._fixed_value:
-            raise ValueError("must equal '{}'.".format(self._fixed_value))
+            raise ValueError(f"must equal '{self._fixed_value}'.")
         return value
 
     def __init__(self, required=False, fixed=None, default=None):
@@ -211,11 +209,7 @@ class ListProperty(Property):
             self.contained = contained
 
         if not self.contained:
-            raise TypeError(
-                "Invalid list element type: {}".format(
-                    str(contained),
-                ),
-            )
+            raise TypeError(f"Invalid list element type: {str(contained)}")
 
         super(ListProperty, self).__init__(**kwargs)
 
@@ -245,16 +239,12 @@ class ListProperty(Property):
                     valid = self.contained(**item)
 
                 else:
-                    raise ValueError(
-                        "Can't create a {} out of {}".format(
-                            self.contained._type, str(item),
-                        ),
-                    )
+                    raise ValueError(f"Can't create a {self.contained._type} out of {str(item)}")
 
                 result.append(valid)
 
         # STIX spec forbids empty lists
-        if len(result) < 1:
+        if not result:
             raise ValueError("must not be empty.")
 
         return result
@@ -266,9 +256,7 @@ class StringProperty(Property):
         super(StringProperty, self).__init__(**kwargs)
 
     def clean(self, value):
-        if not isinstance(value, str):
-            return str(value)
-        return value
+        return value if isinstance(value, str) else str(value)
 
 
 class TypeProperty(Property):
@@ -282,7 +270,7 @@ class TypeProperty(Property):
 class IDProperty(Property):
 
     def __init__(self, type, spec_version=DEFAULT_VERSION):
-        self.required_prefix = type + "--"
+        self.required_prefix = f"{type}--"
         self.spec_version = spec_version
         super(IDProperty, self).__init__()
 
@@ -308,11 +296,11 @@ class IntegerProperty(Property):
             raise ValueError("must be an integer.")
 
         if self.min is not None and value < self.min:
-            msg = "minimum value is {}. received {}".format(self.min, value)
+            msg = f"minimum value is {self.min}. received {value}"
             raise ValueError(msg)
 
         if self.max is not None and value > self.max:
-            msg = "maximum value is {}. received {}".format(self.max, value)
+            msg = f"maximum value is {self.max}. received {value}"
             raise ValueError(msg)
 
         return value
@@ -332,11 +320,11 @@ class FloatProperty(Property):
             raise ValueError("must be a float.")
 
         if self.min is not None and value < self.min:
-            msg = "minimum value is {}. received {}".format(self.min, value)
+            msg = f"minimum value is {self.min}. received {value}"
             raise ValueError(msg)
 
         if self.max is not None and value > self.max:
-            msg = "maximum value is {}. received {}".format(self.max, value)
+            msg = f"maximum value is {self.max}. received {value}"
             raise ValueError(msg)
 
         return value
@@ -575,7 +563,7 @@ class EmbeddedObjectProperty(Property):
         if type(value) is dict:
             value = self.type(**value)
         elif not isinstance(value, self.type):
-            raise ValueError("must be of type {}.".format(self.type.__name__))
+            raise ValueError(f"must be of type {self.type.__name__}.")
         return value
 
 
@@ -590,7 +578,7 @@ class EnumProperty(StringProperty):
     def clean(self, value):
         cleaned_value = super(EnumProperty, self).clean(value)
         if cleaned_value not in self.allowed:
-            raise ValueError("value '{}' is not valid for this enumeration.".format(cleaned_value))
+            raise ValueError(f"value '{cleaned_value}' is not valid for this enumeration.")
 
         return cleaned_value
 
@@ -620,7 +608,7 @@ class ObservableProperty(Property):
         if dictified == {}:
             raise ValueError("The observable property must contain a non-empty dictionary")
 
-        valid_refs = dict((k, v['type']) for (k, v) in dictified.items())
+        valid_refs = {k: v['type'] for (k, v) in dictified.items()}
 
         for key, obj in dictified.items():
             parsed_obj = parse_observable(
@@ -660,19 +648,16 @@ class ExtensionsProperty(DictionaryProperty):
                 if type(subvalue) is dict:
                     if self.allow_custom:
                         subvalue['allow_custom'] = True
-                        dictified[key] = cls(**subvalue)
-                    else:
-                        dictified[key] = cls(**subvalue)
+                    dictified[key] = cls(**subvalue)
                 elif type(subvalue) is cls:
                     # If already an instance of an _Extension class, assume it's valid
                     dictified[key] = subvalue
                 else:
                     raise ValueError("Cannot determine extension type.")
+            elif self.allow_custom:
+                dictified[key] = subvalue
             else:
-                if self.allow_custom:
-                    dictified[key] = subvalue
-                else:
-                    raise CustomContentError("Can't parse unknown extension type: {}".format(key))
+                raise CustomContentError(f"Can't parse unknown extension type: {key}")
         return dictified
 
 
@@ -718,6 +703,4 @@ class STIXObjectProperty(Property):
                 "containing objects of a different spec version.",
             )
 
-        parsed_obj = parse(dictified, allow_custom=self.allow_custom)
-
-        return parsed_obj
+        return parse(dictified, allow_custom=self.allow_custom)

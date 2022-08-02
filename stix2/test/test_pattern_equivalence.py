@@ -608,10 +608,10 @@ def test_comp_other_constant_types():
             else:
                 assert not equivalent_patterns(patt1, patt2)
 
+    patt2 = "[a:b IN (1,2,3)]"
     # can't use an "=" pattern with lists...
     for const in constants:
-        patt1 = "[a:b={}]".format(const)
-        patt2 = "[a:b IN (1,2,3)]"
+        patt1 = f"[a:b={const}]"
         assert not equivalent_patterns(patt1, patt2)
 
 

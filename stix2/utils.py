@@ -72,11 +72,7 @@ def _to_enum(value, enum_type, enum_default=None):
         elif isinstance(value, str):
             value = enum_type[value.upper()]
         else:
-            raise TypeError(
-                "Not a valid {}: {}".format(
-                    enum_type.__name__, value,
-                ),
-            )
+            raise TypeError(f"Not a valid {enum_type.__name__}: {value}")
 
     return value
 
@@ -174,40 +170,37 @@ def format_datetime(dttm):
     )
 
     frac_seconds_str = ""
-    if precision == Precision.ANY:
-        # No need to truncate; ignore constraint
-        if zoned.microsecond:
-            frac_seconds_str = "{:06d}".format(zoned.microsecond).rstrip("0")
+    if (
+        precision == Precision.ANY
+        and zoned.microsecond
+        or precision != Precision.ANY
+        and precision == Precision.SECOND
+        and precision_constraint == PrecisionConstraint.MIN
+        and zoned.microsecond
+    ):
+        frac_seconds_str = "{:06d}".format(zoned.microsecond).rstrip("0")
 
-    elif precision == Precision.SECOND:
-        if precision_constraint == PrecisionConstraint.MIN:
-            # second precision, or better.  Winds up being the same as ANY:
-            # just use all our digits
-            if zoned.microsecond:
-                frac_seconds_str = "{:06d}".format(zoned.microsecond)\
-                    .rstrip("0")
-        # exact: ignore microseconds entirely
+    elif (
+        precision == Precision.ANY
+        or precision == Precision.SECOND
+        and precision_constraint == PrecisionConstraint.MIN
+        or precision == Precision.SECOND
+    ):
+        pass
+    elif precision_constraint == PrecisionConstraint.EXACT:
+        # can't rstrip() here or we may lose precision
+        frac_seconds_str = "{:06d}".format(zoned.microsecond)[:3]
 
     else:
-        # precision == millisecond
-        if precision_constraint == PrecisionConstraint.EXACT:
-            # can't rstrip() here or we may lose precision
-            frac_seconds_str = "{:06d}".format(zoned.microsecond)[:3]
+        # millisecond precision, or better.  So we can rstrip() zeros, but
+        # only to a length of at least 3 digits (ljust() adds zeros back,
+        # if it stripped too far.)
+        frac_seconds_str = "{:06d}"\
+            .format(zoned.microsecond)\
+            .rstrip("0")\
+            .ljust(3, "0")
 
-        else:
-            # millisecond precision, or better.  So we can rstrip() zeros, but
-            # only to a length of at least 3 digits (ljust() adds zeros back,
-            # if it stripped too far.)
-            frac_seconds_str = "{:06d}"\
-                .format(zoned.microsecond)\
-                .rstrip("0")\
-                .ljust(3, "0")
-
-    ts = "{}{}{}Z".format(
-        ts,
-        "." if frac_seconds_str else "",
-        frac_seconds_str,
-    )
+    ts = f'{ts}{"." if frac_seconds_str else ""}{frac_seconds_str}Z'
 
     return ts
 
@@ -287,27 +280,23 @@ def _get_dict(data):
 
     if type(data) is dict:
         return data
-    else:
-        try:
-            return json.loads(data)
-        except TypeError:
-            pass
-        try:
-            return json.load(data)
-        except AttributeError:
-            pass
-        try:
-            return dict(data)
-        except (ValueError, TypeError):
-            raise ValueError("Cannot convert '%s' to dictionary." % str(data))
+    try:
+        return json.loads(data)
+    except TypeError:
+        pass
+    try:
+        return json.load(data)
+    except AttributeError:
+        pass
+    try:
+        return dict(data)
+    except (ValueError, TypeError):
+        raise ValueError("Cannot convert '%s' to dictionary." % str(data))
 
 
 def get_class_hierarchy_names(obj):
     """Given an object, return the names of the class hierarchy."""
-    names = []
-    for cls in obj.__class__.__mro__:
-        names.append(cls.__name__)
-    return names
+    return [cls.__name__ for cls in obj.__class__.__mro__]
 
 
 def get_type_from_id(stix_id):
@@ -329,29 +318,26 @@ def detect_spec_version(stix_dict):
     if 'spec_version' in stix_dict:
         # For STIX 2.0, applies to bundles only.
         # For STIX 2.1+, applies to SCOs, SDOs, SROs, and markings only.
-        v = stix_dict['spec_version']
+        return stix_dict['spec_version']
     elif "id" not in stix_dict:
         # Only 2.0 SCOs don't have ID properties
-        v = "2.0"
+        return "2.0"
     elif obj_type == 'bundle':
         # Bundle without a spec_version property: must be 2.1.  But to
         # future-proof, use max version over all contained SCOs, with 2.1
         # minimum.
-        v = max(
+        return max(
             "2.1",
-            max(
-                detect_spec_version(obj) for obj in stix_dict["objects"]
-            ),
+            max(detect_spec_version(obj) for obj in stix_dict["objects"]),
         )
+
     elif obj_type in mappings.STIX2_OBJ_MAPS["2.1"]["observables"]:
         # Non-bundle object with an ID and without spec_version.  Could be a
         # 2.1 SCO or 2.0 SDO/SRO/marking.  Check for 2.1 SCO...
-        v = "2.1"
+        return "2.1"
     else:
         # Not a 2.1 SCO; must be a 2.0 object.
-        v = "2.0"
-
-    return v
+        return "2.0"
 
 
 def _stix_type_of(value):
@@ -366,14 +352,9 @@ def _stix_type_of(value):
     :return: A STIX type
     """
     if isinstance(value, str):
-        if "--" in value:
-            type_ = get_type_from_id(value)
-        else:
-            type_ = value
+        return get_type_from_id(value) if "--" in value else value
     else:
-        type_ = value["type"]
-
-    return type_
+        return value["type"]
 
 
 def is_sdo(value, stix_version=stix2.version.DEFAULT_VERSION):

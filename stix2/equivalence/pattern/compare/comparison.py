@@ -61,16 +61,13 @@ def bool_cmp(value1, value2):
     value2 = value2.value
 
     if (value1 and value2) or (not value1 and not value2):
-        result = 0
+        return 0
 
-    # Let's say... True < False?
     elif value1:
-        result = -1
+        return -1
 
     else:
-        result = 1
-
-    return result
+        return 1
 
 
 def hex_cmp(value1, value2):
@@ -133,9 +130,7 @@ def list_cmp(value1, value2):
         value2.value, key=functools.cmp_to_key(constant_cmp),
     )
 
-    result = iter_lex_cmp(sorted_value1, sorted_value2, constant_cmp)
-
-    return result
+    return iter_lex_cmp(sorted_value1, sorted_value2, constant_cmp)
 
 
 _CONSTANT_COMPARATORS = {
@@ -171,16 +166,13 @@ def object_path_component_cmp(comp1, comp2):
     # both ints or both strings: use builtin comparison operators
     if (isinstance(comp1, int) and isinstance(comp2, int)) \
             or (isinstance(comp1, str) and isinstance(comp2, str)):
-        result = generic_cmp(comp1, comp2)
+        return generic_cmp(comp1, comp2)
 
-    # one is int, one is string.  Let's say ints come before strings.
     elif isinstance(comp1, int):
-        result = -1
+        return -1
 
     else:
-        result = 1
-
-    return result
+        return 1
 
 
 def object_path_to_raw_values(path):
@@ -225,10 +217,10 @@ def object_path_cmp(path1, path2):
         greater than the second
     """
     if path1.object_type_name < path2.object_type_name:
-        result = -1
+        return -1
 
     elif path1.object_type_name > path2.object_type_name:
-        result = 1
+        return 1
 
     else:
         # I always thought of key and index path steps as separate.  The AST
@@ -237,11 +229,11 @@ def object_path_cmp(path1, path2):
         # values again.  Maybe I should not do this...
         path_vals1 = object_path_to_raw_values(path1)
         path_vals2 = object_path_to_raw_values(path2)
-        result = iter_lex_cmp(
-            path_vals1, path_vals2, object_path_component_cmp,
+        return iter_lex_cmp(
+            path_vals1,
+            path_vals2,
+            object_path_component_cmp,
         )
-
-    return result
 
 
 def comparison_operator_cmp(op1, op2):
@@ -259,9 +251,7 @@ def comparison_operator_cmp(op1, op2):
     op1_idx = _COMPARISON_OP_ORDER.index(op1)
     op2_idx = _COMPARISON_OP_ORDER.index(op2)
 
-    result = generic_cmp(op1_idx, op2_idx)
-
-    return result
+    return generic_cmp(op1_idx, op2_idx)
 
 
 def constant_cmp(value1, value2):
@@ -299,12 +289,11 @@ def constant_cmp(value1, value2):
 
         result = generic_cmp(type1_idx, type2_idx)
         if result == 0:
-            # Types are the same; must compare values
-            cmp_func = _CONSTANT_COMPARATORS.get(type1)
-            if not cmp_func:
-                raise TypeError("Don't know how to compare " + type1.__name__)
+            if cmp_func := _CONSTANT_COMPARATORS.get(type1):
+                result = cmp_func(value1, value2)
 
-            result = cmp_func(value1, value2)
+            else:
+                raise TypeError("Don't know how to compare " + type1.__name__)
 
     return result
 
@@ -358,30 +347,28 @@ def comparison_expression_cmp(expr1, expr2):
     """
     if isinstance(expr1, _ComparisonExpression) \
             and isinstance(expr2, _ComparisonExpression):
-        result = simple_comparison_expression_cmp(expr1, expr2)
+        return simple_comparison_expression_cmp(expr1, expr2)
 
-    # One is simple, one is compound.  Let's say... simple ones come first?
     elif isinstance(expr1, _ComparisonExpression):
-        result = -1
+        return -1
 
     elif isinstance(expr2, _ComparisonExpression):
-        result = 1
+        return 1
 
-    # Both are compound: AND's before OR's?
     elif isinstance(expr1, AndBooleanExpression) \
             and isinstance(expr2, OrBooleanExpression):
-        result = -1
+        return -1
 
     elif isinstance(expr1, OrBooleanExpression) \
             and isinstance(expr2, AndBooleanExpression):
-        result = 1
+        return 1
 
     else:
         # Both compound, same boolean operator: sort according to contents.
         # This will order according to recursive invocations of this comparator,
         # on sub-expressions.
-        result = iter_lex_cmp(
-            expr1.operands, expr2.operands, comparison_expression_cmp,
+        return iter_lex_cmp(
+            expr1.operands,
+            expr2.operands,
+            comparison_expression_cmp,
         )
-
-    return result

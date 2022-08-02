@@ -62,9 +62,7 @@ def graph_equivalence(
         ds1, ds2, prop_scores, ignore_spec_version,
         versioning_checks, max_depth, **weight_dict
     )
-    if similarity_result >= threshold:
-        return True
-    return False
+    return similarity_result >= threshold
 
 
 def graph_similarity(
@@ -115,7 +113,6 @@ def graph_similarity(
 
     """
     results = {}
-    similarity_score = 0
     weights = WEIGHTS.copy()
 
     if weight_dict:
@@ -150,21 +147,13 @@ def graph_similarity(
             max_depth, **weights
         )
 
-        if object1_id not in results:
+        if object1_id not in results or result > results[object1_id]["value"]:
             results[object1_id] = {"lhs": object1_id, "rhs": object2_id, "prop_score": iprop_score, "value": result}
-        elif result > results[object1_id]["value"]:
-            results[object1_id] = {"lhs": object1_id, "rhs": object2_id, "prop_score": iprop_score, "value": result}
-
-        if object2_id not in results:
+        if object2_id not in results or result > results[object2_id]["value"]:
             results[object2_id] = {"lhs": object2_id, "rhs": object1_id, "prop_score": iprop_score, "value": result}
-        elif result > results[object2_id]["value"]:
-            results[object2_id] = {"lhs": object2_id, "rhs": object1_id, "prop_score": iprop_score, "value": result}
-
     matching_score = sum(x["value"] for x in results.values())
     len_pairs = len(results)
-    if len_pairs > 0:
-        similarity_score = matching_score / len_pairs
-
+    similarity_score = matching_score / len_pairs if len_pairs > 0 else 0
     prop_scores["matching_score"] = matching_score
     prop_scores["len_pairs"] = len_pairs
     prop_scores["summary"] = results

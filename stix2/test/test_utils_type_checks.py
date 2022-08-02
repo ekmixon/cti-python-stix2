@@ -27,7 +27,7 @@ import stix2.utils
 def test_is_sdo(type_, stix_version):
     assert stix2.utils.is_sdo(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert stix2.utils.is_sdo(id_, stix_version)
 
     assert stix2.utils.is_stix_type(
@@ -50,7 +50,7 @@ def test_is_sdo(type_, stix_version):
 def test_is_not_sdo(type_, stix_version):
     assert not stix2.utils.is_sdo(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert not stix2.utils.is_sdo(id_, stix_version)
 
     d = {
@@ -89,7 +89,7 @@ def test_is_not_sdo(type_, stix_version):
 def test_is_sco(type_, stix_version):
     assert stix2.utils.is_sco(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert stix2.utils.is_sco(id_, stix_version)
 
     assert stix2.utils.is_stix_type(
@@ -111,7 +111,7 @@ def test_is_sco(type_, stix_version):
 def test_is_not_sco(type_, stix_version):
     assert not stix2.utils.is_sco(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert not stix2.utils.is_sco(id_, stix_version)
 
     d = {
@@ -134,7 +134,7 @@ def test_is_not_sco(type_, stix_version):
 def test_is_sro(type_, stix_version):
     assert stix2.utils.is_sro(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert stix2.utils.is_sro(id_, stix_version)
 
     assert stix2.utils.is_stix_type(
@@ -156,7 +156,7 @@ def test_is_sro(type_, stix_version):
 def test_is_not_sro(type_, stix_version):
     assert not stix2.utils.is_sro(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert not stix2.utils.is_sro(id_, stix_version)
 
     d = {
@@ -194,7 +194,7 @@ def test_is_marking(stix_version):
 def test_is_not_marking(type_, stix_version):
     assert not stix2.utils.is_marking(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert not stix2.utils.is_marking(id_, stix_version)
 
     d = {
@@ -221,7 +221,7 @@ def test_is_not_marking(type_, stix_version):
 def test_is_object(type_, stix_version):
     assert stix2.utils.is_object(type_, stix_version)
 
-    id_ = type_ + "--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
+    id_ = f"{type_}--a12fa04c-6586-4128-8d1a-cfe0d1c081f5"
     assert stix2.utils.is_object(id_, stix_version)
 
 

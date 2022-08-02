@@ -45,9 +45,9 @@ class MissingPropertiesError(PropertyPresenceError):
         self.properties = sorted(properties)
 
         msg = "No values for required properties for {0}: ({1}).".format(
-            cls.__name__,
-            ", ".join(x for x in self.properties),
+            cls.__name__, ", ".join(self.properties)
         )
+
 
         super(MissingPropertiesError, self).__init__(msg, cls)
 
@@ -59,9 +59,9 @@ class ExtraPropertiesError(PropertyPresenceError):
         self.properties = sorted(properties)
 
         msg = "Unexpected properties for {0}: ({1}).".format(
-            cls.__name__,
-            ", ".join(x for x in self.properties),
+            cls.__name__, ", ".join(self.properties)
         )
+
 
         super(ExtraPropertiesError, self).__init__(msg, cls)
 
@@ -73,9 +73,9 @@ class MutuallyExclusivePropertiesError(PropertyPresenceError):
         self.properties = sorted(properties)
 
         msg = "The ({1}) properties for {0} are mutually exclusive.".format(
-            cls.__name__,
-            ", ".join(x for x in self.properties),
+            cls.__name__, ", ".join(self.properties)
         )
+
 
         super(MutuallyExclusivePropertiesError, self).__init__(msg, cls)
 
@@ -100,11 +100,11 @@ class AtLeastOnePropertyError(PropertyPresenceError):
     def __init__(self, cls, properties):
         self.properties = sorted(properties)
 
-        msg = "At least one of the ({1}) properties for {0} must be " \
-              "populated.".format(
-                   cls.__name__,
-                   ", ".join(x for x in self.properties),
-              )
+        msg = (
+            "At least one of the ({1}) properties for {0} must be "
+            "populated.".format(cls.__name__, ", ".join(self.properties))
+        )
+
 
         super(AtLeastOnePropertyError, self).__init__(msg, cls)
 
@@ -208,10 +208,13 @@ class TypeNotVersionableError(VersioningError):
 
         self.object = obj
 
-        msg = "Object type{}is not versionable.  Try a dictionary or " \
-              "instance of an SDO or SRO class.".format(
-                  " '{}' ".format(type_name) if type_name else " ",
-              )
+        msg = (
+            "Object type{}is not versionable.  Try a dictionary or "
+            "instance of an SDO or SRO class.".format(
+                f" '{type_name}' " if type_name else " "
+            )
+        )
+
         super().__init__(msg)
 
 

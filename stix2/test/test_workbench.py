@@ -22,7 +22,7 @@ _STIX_DATA_PATH = os.path.join(
     _STIX_VID,
     "stix2_data",
 )
-_STIX_CONSTANTS_MODULE = "stix2.test." + _STIX_VID + ".constants"
+_STIX_CONSTANTS_MODULE = f"stix2.test.{_STIX_VID}.constants"
 
 
 constants = importlib.import_module(_STIX_CONSTANTS_MODULE)

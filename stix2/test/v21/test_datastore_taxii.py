@@ -44,21 +44,19 @@ class MockTAXIICollectionEndpoint(Collection):
         query_params = _filter_kwargs_to_query_params(filter_kwargs)
         assert isinstance(query_params, dict)
         full_filter = BasicFilter(query_params)
-        objs = full_filter.process_filter(
+        if objs := full_filter.process_filter(
             self.objects,
             ("id", "type", "version"),
             self.manifests,
             100,
-        )[0]
-        if objs:
+        )[0]:
             return {
                 "objects": objs,
                 "more": False,
             }
-        else:
-            resp = Response()
-            resp.status_code = 404
-            resp.raise_for_status()
+        resp = Response()
+        resp.status_code = 404
+        resp.raise_for_status()
 
     def get_object(self, id, **filter_kwargs):
         self._verify_can_read()
@@ -66,9 +64,7 @@ class MockTAXIICollectionEndpoint(Collection):
         assert isinstance(query_params, dict)
         full_filter = BasicFilter(query_params)
 
-        # In this endpoint we must first filter objects by id beforehand.
-        objects = [x for x in self.objects if x["id"] == id]
-        if objects:
+        if objects := [x for x in self.objects if x["id"] == id]:
             filtered_objects = full_filter.process_filter(
                 objects,
                 ("version",),
@@ -82,10 +78,9 @@ class MockTAXIICollectionEndpoint(Collection):
                 "objects": filtered_objects,
                 "more": False,
             }
-        else:
-            resp = Response()
-            resp.status_code = 404
-            resp.raise_for_status()
+        resp = Response()
+        resp.status_code = 404
+        resp.raise_for_status()
 
 
 @pytest.fixture
@@ -357,7 +352,7 @@ def test_add_get_remove_filter(collection):
     ds.filters.add(valid_filters[2])
     assert len(ds.filters) == 3
 
-    assert valid_filters == [f for f in ds.filters]
+    assert valid_filters == list(ds.filters)
 
     # remove
     ds.filters.remove(valid_filters[0])

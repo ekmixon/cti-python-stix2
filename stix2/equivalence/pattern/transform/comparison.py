@@ -103,7 +103,7 @@ class ComparisonExpressionTransformer(Transformer):
             result, changed = self.transform(ast.expression)
 
         else:
-            raise TypeError("Not a comparison expression: " + str(ast))
+            raise TypeError(f"Not a comparison expression: {str(ast)}")
 
         return result, changed
 
@@ -276,7 +276,7 @@ class AbsorptionTransformer(
                 # comparison expression.  We also require the right operator
                 # for child2: "AND" if ast is "OR" and vice versa.
                 if not isinstance(child2, _BooleanExpression) \
-                        or child2.operator != secondary_op:
+                            or child2.operator != secondary_op:
                     continue
 
                 # The simple check: is child1 contained in child2?

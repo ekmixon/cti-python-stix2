@@ -122,7 +122,7 @@ def test_parse_datetime(
 def test_format_datetime(us, precision, precision_constraint, expected_us_str):
 
     dt = _DT.replace(microsecond=us)
-    expected_dt_str = "{}{}Z".format(_DT_STR, expected_us_str)
+    expected_dt_str = f"{_DT_STR}{expected_us_str}Z"
 
     sdt = STIXdatetime(
         dt,

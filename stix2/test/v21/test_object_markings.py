@@ -191,81 +191,198 @@ GET_MARKINGS_TEST_DATA = \
 
 @pytest.mark.parametrize("data", [GET_MARKINGS_TEST_DATA])
 def test_get_markings_object_marking(data):
-    assert set(markings.get_markings(data, None)) == set(["11"])
+    assert set(markings.get_markings(data, None)) == {"11"}
 
 
 @pytest.mark.parametrize("data", [GET_MARKINGS_TEST_DATA])
 def test_get_markings_object_and_granular_combinations(data):
     """Test multiple combinations for inherited and descendant markings."""
-    assert set(markings.get_markings(data, "a", False, False)) == set(["1"])
-    assert set(markings.get_markings(data, "a", True, False)) == set(["1", "11"])
-    assert set(markings.get_markings(data, "a", True, True)) == set(["1", "11"])
-    assert set(markings.get_markings(data, "a", False, True)) == set(["1"])
+    assert set(markings.get_markings(data, "a", False, False)) == {"1"}
+    assert set(markings.get_markings(data, "a", True, False)) == {"1", "11"}
+    assert set(markings.get_markings(data, "a", True, True)) == {"1", "11"}
+    assert set(markings.get_markings(data, "a", False, True)) == {"1"}
 
     assert set(markings.get_markings(data, "b", False, False)) == set([])
-    assert set(markings.get_markings(data, "b", True, False)) == set(["11"])
-    assert set(markings.get_markings(data, "b", True, True)) == set(["11"])
+    assert set(markings.get_markings(data, "b", True, False)) == {"11"}
+    assert set(markings.get_markings(data, "b", True, True)) == {"11"}
     assert set(markings.get_markings(data, "b", False, True)) == set([])
 
-    assert set(markings.get_markings(data, "c", False, False)) == set(["2"])
-    assert set(markings.get_markings(data, "c", True, False)) == set(["2", "11"])
-    assert set(markings.get_markings(data, "c", True, True)) == set(["2", "3", "4", "5", "11"])
-    assert set(markings.get_markings(data, "c", False, True)) == set(["2", "3", "4", "5"])
+    assert set(markings.get_markings(data, "c", False, False)) == {"2"}
+    assert set(markings.get_markings(data, "c", True, False)) == {"2", "11"}
+    assert set(markings.get_markings(data, "c", True, True)) == {
+        "2",
+        "3",
+        "4",
+        "5",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "c", False, True)) == {
+        "2",
+        "3",
+        "4",
+        "5",
+    }
+
 
     assert set(markings.get_markings(data, "c.[0]", False, False)) == set([])
-    assert set(markings.get_markings(data, "c.[0]", True, False)) == set(["2", "11"])
-    assert set(markings.get_markings(data, "c.[0]", True, True)) == set(["2", "11"])
+    assert set(markings.get_markings(data, "c.[0]", True, False)) == {"2", "11"}
+    assert set(markings.get_markings(data, "c.[0]", True, True)) == {"2", "11"}
     assert set(markings.get_markings(data, "c.[0]", False, True)) == set([])
 
-    assert set(markings.get_markings(data, "c.[1]", False, False)) == set(["3"])
-    assert set(markings.get_markings(data, "c.[1]", True, False)) == set(["2", "3", "11"])
-    assert set(markings.get_markings(data, "c.[1]", True, True)) == set(["2", "3", "11"])
-    assert set(markings.get_markings(data, "c.[1]", False, True)) == set(["3"])
+    assert set(markings.get_markings(data, "c.[1]", False, False)) == {"3"}
+    assert set(markings.get_markings(data, "c.[1]", True, False)) == {
+        "2",
+        "3",
+        "11",
+    }
 
-    assert set(markings.get_markings(data, "c.[2]", False, False)) == set(["4"])
-    assert set(markings.get_markings(data, "c.[2]", True, False)) == set(["2", "4", "11"])
-    assert set(markings.get_markings(data, "c.[2]", True, True)) == set(["2", "4", "5", "11"])
-    assert set(markings.get_markings(data, "c.[2]", False, True)) == set(["4", "5"])
+    assert set(markings.get_markings(data, "c.[1]", True, True)) == {
+        "2",
+        "3",
+        "11",
+    }
 
-    assert set(markings.get_markings(data, "c.[2].g", False, False)) == set(["5"])
-    assert set(markings.get_markings(data, "c.[2].g", True, False)) == set(["2", "4", "5", "11"])
-    assert set(markings.get_markings(data, "c.[2].g", True, True)) == set(["2", "4", "5", "11"])
-    assert set(markings.get_markings(data, "c.[2].g", False, True)) == set(["5"])
+    assert set(markings.get_markings(data, "c.[1]", False, True)) == {"3"}
 
-    assert set(markings.get_markings(data, "x", False, False)) == set(["6"])
-    assert set(markings.get_markings(data, "x", True, False)) == set(["6", "11"])
-    assert set(markings.get_markings(data, "x", True, True)) == set(["6", "7", "8", "9", "10", "11"])
-    assert set(markings.get_markings(data, "x", False, True)) == set(["6", "7", "8", "9", "10"])
+    assert set(markings.get_markings(data, "c.[2]", False, False)) == {"4"}
+    assert set(markings.get_markings(data, "c.[2]", True, False)) == {
+        "2",
+        "4",
+        "11",
+    }
 
-    assert set(markings.get_markings(data, "x.y", False, False)) == set(["7"])
-    assert set(markings.get_markings(data, "x.y", True, False)) == set(["6", "7", "11"])
-    assert set(markings.get_markings(data, "x.y", True, True)) == set(["6", "7", "8", "11"])
-    assert set(markings.get_markings(data, "x.y", False, True)) == set(["7", "8"])
+    assert set(markings.get_markings(data, "c.[2]", True, True)) == {
+        "2",
+        "4",
+        "5",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "c.[2]", False, True)) == {"4", "5"}
+
+    assert set(markings.get_markings(data, "c.[2].g", False, False)) == {"5"}
+    assert set(markings.get_markings(data, "c.[2].g", True, False)) == {
+        "2",
+        "4",
+        "5",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "c.[2].g", True, True)) == {
+        "2",
+        "4",
+        "5",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "c.[2].g", False, True)) == {"5"}
+
+    assert set(markings.get_markings(data, "x", False, False)) == {"6"}
+    assert set(markings.get_markings(data, "x", True, False)) == {"6", "11"}
+    assert set(markings.get_markings(data, "x", True, True)) == {
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x", False, True)) == {
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+    }
+
+
+    assert set(markings.get_markings(data, "x.y", False, False)) == {"7"}
+    assert set(markings.get_markings(data, "x.y", True, False)) == {"6", "7", "11"}
+    assert set(markings.get_markings(data, "x.y", True, True)) == {
+        "6",
+        "7",
+        "8",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.y", False, True)) == {"7", "8"}
 
     assert set(markings.get_markings(data, "x.y.[0]", False, False)) == set([])
-    assert set(markings.get_markings(data, "x.y.[0]", True, False)) == set(["6", "7", "11"])
-    assert set(markings.get_markings(data, "x.y.[0]", True, True)) == set(["6", "7", "11"])
+    assert set(markings.get_markings(data, "x.y.[0]", True, False)) == {
+        "6",
+        "7",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.y.[0]", True, True)) == {
+        "6",
+        "7",
+        "11",
+    }
+
     assert set(markings.get_markings(data, "x.y.[0]", False, True)) == set([])
 
-    assert set(markings.get_markings(data, "x.y.[1]", False, False)) == set(["8"])
-    assert set(markings.get_markings(data, "x.y.[1]", True, False)) == set(["6", "7", "8", "11"])
-    assert set(markings.get_markings(data, "x.y.[1]", True, True)) == set(["6", "7", "8", "11"])
-    assert set(markings.get_markings(data, "x.y.[1]", False, True)) == set(["8"])
+    assert set(markings.get_markings(data, "x.y.[1]", False, False)) == {"8"}
+    assert set(markings.get_markings(data, "x.y.[1]", True, False)) == {
+        "6",
+        "7",
+        "8",
+        "11",
+    }
 
-    assert set(markings.get_markings(data, "x.z", False, False)) == set(["9"])
-    assert set(markings.get_markings(data, "x.z", True, False)) == set(["6", "9", "11"])
-    assert set(markings.get_markings(data, "x.z", True, True)) == set(["6", "9", "10", "11"])
-    assert set(markings.get_markings(data, "x.z", False, True)) == set(["9", "10"])
+    assert set(markings.get_markings(data, "x.y.[1]", True, True)) == {
+        "6",
+        "7",
+        "8",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.y.[1]", False, True)) == {"8"}
+
+    assert set(markings.get_markings(data, "x.z", False, False)) == {"9"}
+    assert set(markings.get_markings(data, "x.z", True, False)) == {"6", "9", "11"}
+    assert set(markings.get_markings(data, "x.z", True, True)) == {
+        "6",
+        "9",
+        "10",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.z", False, True)) == {"9", "10"}
 
     assert set(markings.get_markings(data, "x.z.foo1", False, False)) == set([])
-    assert set(markings.get_markings(data, "x.z.foo1", True, False)) == set(["6", "9", "11"])
-    assert set(markings.get_markings(data, "x.z.foo1", True, True)) == set(["6", "9", "11"])
+    assert set(markings.get_markings(data, "x.z.foo1", True, False)) == {
+        "6",
+        "9",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.z.foo1", True, True)) == {
+        "6",
+        "9",
+        "11",
+    }
+
     assert set(markings.get_markings(data, "x.z.foo1", False, True)) == set([])
 
-    assert set(markings.get_markings(data, "x.z.foo2", False, False)) == set(["10"])
-    assert set(markings.get_markings(data, "x.z.foo2", True, False)) == set(["6", "9", "10", "11"])
-    assert set(markings.get_markings(data, "x.z.foo2", True, True)) == set(["6", "9", "10", "11"])
-    assert set(markings.get_markings(data, "x.z.foo2", False, True)) == set(["10"])
+    assert set(markings.get_markings(data, "x.z.foo2", False, False)) == {"10"}
+    assert set(markings.get_markings(data, "x.z.foo2", True, False)) == {
+        "6",
+        "9",
+        "10",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.z.foo2", True, True)) == {
+        "6",
+        "9",
+        "10",
+        "11",
+    }
+
+    assert set(markings.get_markings(data, "x.z.foo2", False, True)) == {"10"}
 
 
 @pytest.mark.parametrize(

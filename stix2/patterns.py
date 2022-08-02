@@ -13,10 +13,8 @@ def escape_quotes_and_backslashes(s):
 
 
 def quote_if_needed(x):
-    if isinstance(x, str):
-        if x.find("-") != -1:
-            if not x.startswith("'"):
-                return "'" + x + "'"
+    if isinstance(x, str) and x.find("-") != -1 and not x.startswith("'"):
+        return "'" + x + "'"
     return x
 
 
@@ -52,7 +50,7 @@ class TimestampConstant(_Constant):
             raise ValueError("Must be a datetime object or timestamp string.")
 
     def __str__(self):
-        return "t%s" % repr(self.value)
+        return f"t{repr(self.value)}"
 
 
 class IntegerConstant(_Constant):
@@ -68,7 +66,7 @@ class IntegerConstant(_Constant):
             raise ValueError("must be an integer.")
 
     def __str__(self):
-        return "%s" % self.value
+        return f"{self.value}"
 
 
 class FloatConstant(_Constant):
@@ -79,7 +77,7 @@ class FloatConstant(_Constant):
             raise ValueError("must be a float.")
 
     def __str__(self):
-        return "%s" % self.value
+        return f"{self.value}"
 
 
 class BooleanConstant(_Constant):
@@ -166,9 +164,8 @@ class BinaryConstant(_Constant):
     def __init__(self, value, from_parse_tree=False):
         # support with or without a 'b'
         if from_parse_tree:
-            m = re.match("^b'(.+)'$", value)
-            if m:
-                value = m.group(1)
+            if m := re.match("^b'(.+)'$", value):
+                value = m[1]
         try:
             base64.b64decode(value)
             self.value = value
@@ -189,12 +186,10 @@ class HexConstant(_Constant):
         # support with or without an 'h'
         if not from_parse_tree and re.match('^([a-fA-F0-9]{2})+$', value):
             self.value = value
+        elif m := re.match("^h'(([a-fA-F0-9]{2})+)'$", value):
+            self.value = m[1]
         else:
-            m = re.match("^h'(([a-fA-F0-9]{2})+)'$", value)
-            if m:
-                self.value = m.group(1)
-            else:
-                raise ValueError("must contain an even number of hexadecimal characters")
+            raise ValueError("must contain an even number of hexadecimal characters")
 
     def __str__(self):
         return "h'%s'" % self.value
@@ -211,7 +206,7 @@ class ListConstant(_Constant):
         self.value = [x if isinstance(x, _Constant) else make_constant(x) for x in values]
 
     def __str__(self):
-        return "(" + ", ".join(["%s" % x for x in self.value]) + ")"
+        return "(" + ", ".join([f"{x}" for x in self.value]) + ")"
 
 
 def make_constant(value):
@@ -240,7 +235,7 @@ def make_constant(value):
     elif isinstance(value, list):
         return ListConstant(value)
     else:
-        raise ValueError("Unable to create a constant from %s" % value)
+        raise ValueError(f"Unable to create a constant from {value}")
 
 
 class _ObjectPathComponent(object):
@@ -290,7 +285,7 @@ class ListObjectPathComponent(_ObjectPathComponent):
         self.index = index
 
     def __str__(self):
-        return "%s[%s]" % (quote_if_needed(self.property_name), self.index)
+        return f"{quote_if_needed(self.property_name)}[{self.index}]"
 
 
 class ReferenceObjectPathComponent(_ObjectPathComponent):
@@ -319,7 +314,7 @@ class ObjectPath(object):
         ]
 
     def __str__(self):
-        return "%s:%s" % (self.object_type_name, ".".join(["%s" % quote_if_needed(x) for x in self.property_path]))
+        return f'{self.object_type_name}:{".".join([f"{quote_if_needed(x)}" for x in self.property_path])}'
 
     def merge(self, other):
         """Extend the object property with that of the supplied object property path"""
@@ -359,18 +354,15 @@ class _ComparisonExpression(_PatternExpression):
             self.lhs = lhs
         else:
             self.lhs = ObjectPath.make_object_path(lhs)
-        if isinstance(rhs, _Constant):
-            self.rhs = rhs
-        else:
-            self.rhs = make_constant(rhs)
+        self.rhs = rhs if isinstance(rhs, _Constant) else make_constant(rhs)
         self.negated = negated
         self.root_types = {self.lhs.object_type_name}
 
     def __str__(self):
         if self.negated:
-            return "%s NOT %s %s" % (self.lhs, self.operator, self.rhs)
+            return f"{self.lhs} NOT {self.operator} {self.rhs}"
         else:
-            return "%s %s %s" % (self.lhs, self.operator, self.rhs)
+            return f"{self.lhs} {self.operator} {self.rhs}"
 
 
 class EqualityComparisonExpression(_ComparisonExpression):
@@ -517,10 +509,8 @@ class _BooleanExpression(_PatternExpression):
                 raise ValueError("All operands to an 'AND' expression must be satisfiable with the same object type")
 
     def __str__(self):
-        sub_exprs = []
-        for o in self.operands:
-            sub_exprs.append(str(o))
-        return (" " + self.operator + " ").join(sub_exprs)
+        sub_exprs = [str(o) for o in self.operands]
+        return f" {self.operator} ".join(sub_exprs)
 
 
 class AndBooleanExpression(_BooleanExpression):
@@ -554,7 +544,14 @@ class ObservationExpression(_PatternExpression):
         self.operand = operand
 
     def __str__(self):
-        return "%s" % self.operand if isinstance(self.operand, (ObservationExpression, _CompoundObservationExpression)) else "[%s]" % self.operand
+        return (
+            f"{self.operand}"
+            if isinstance(
+                self.operand,
+                (ObservationExpression, _CompoundObservationExpression),
+            )
+            else f"[{self.operand}]"
+        )
 
 
 class _CompoundObservationExpression(_PatternExpression):
@@ -569,10 +566,8 @@ class _CompoundObservationExpression(_PatternExpression):
         self.operands = operands
 
     def __str__(self):
-        sub_exprs = []
-        for o in self.operands:
-            sub_exprs.append("%s" % o)
-        return (" " + self.operator + " ").join(sub_exprs)
+        sub_exprs = [f"{o}" for o in self.operands]
+        return f" {self.operator} ".join(sub_exprs)
 
 
 class AndObservationExpression(_CompoundObservationExpression):
@@ -617,7 +612,7 @@ class ParentheticalExpression(_PatternExpression):
             self.root_types = exp.root_types
 
     def __str__(self):
-        return "(%s)" % self.expression
+        return f"({self.expression})"
 
 
 class _ExpressionQualifier(_PatternExpression):
@@ -636,10 +631,12 @@ class RepeatQualifier(_ExpressionQualifier):
         elif isinstance(times_to_repeat, int):
             self.times_to_repeat = IntegerConstant(times_to_repeat)
         else:
-            raise ValueError("%s is not a valid argument for a Repeat Qualifier" % times_to_repeat)
+            raise ValueError(
+                f"{times_to_repeat} is not a valid argument for a Repeat Qualifier"
+            )
 
     def __str__(self):
-        return "REPEATS %s TIMES" % self.times_to_repeat
+        return f"REPEATS {self.times_to_repeat} TIMES"
 
 
 class WithinQualifier(_ExpressionQualifier):
@@ -654,10 +651,12 @@ class WithinQualifier(_ExpressionQualifier):
         elif isinstance(number_of_seconds, int):
             self.number_of_seconds = IntegerConstant(number_of_seconds)
         else:
-            raise ValueError("%s is not a valid argument for a Within Qualifier" % number_of_seconds)
+            raise ValueError(
+                f"{number_of_seconds} is not a valid argument for a Within Qualifier"
+            )
 
     def __str__(self):
-        return "WITHIN %s SECONDS" % self.number_of_seconds
+        return f"WITHIN {self.number_of_seconds} SECONDS"
 
 
 class StartStopQualifier(_ExpressionQualifier):
@@ -675,7 +674,10 @@ class StartStopQualifier(_ExpressionQualifier):
         elif isinstance(start_time, StringConstant):
             self.start_time = StringConstant(start_time.value)
         else:
-            raise ValueError("%s is not a valid argument for a Start/Stop Qualifier" % start_time)
+            raise ValueError(
+                f"{start_time} is not a valid argument for a Start/Stop Qualifier"
+            )
+
         if isinstance(stop_time, TimestampConstant):
             self.stop_time = stop_time
         elif isinstance(stop_time, datetime.date):
@@ -683,10 +685,12 @@ class StartStopQualifier(_ExpressionQualifier):
         elif isinstance(stop_time, StringConstant):
             self.stop_time = StringConstant(stop_time.value)
         else:
-            raise ValueError("%s is not a valid argument for a Start/Stop Qualifier" % stop_time)
+            raise ValueError(
+                f"{stop_time} is not a valid argument for a Start/Stop Qualifier"
+            )
 
     def __str__(self):
-        return "START %s STOP %s" % (self.start_time, self.stop_time)
+        return f"START {self.start_time} STOP {self.stop_time}"
 
 
 class QualifiedObservationExpression(_PatternExpression):
@@ -701,4 +705,4 @@ class QualifiedObservationExpression(_PatternExpression):
         self.qualifier = qualifier
 
     def __str__(self):
-        return "%s %s" % (self.observation_expression, self.qualifier)
+        return f"{self.observation_expression} {self.qualifier}"

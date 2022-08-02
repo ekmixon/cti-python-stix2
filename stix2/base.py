@@ -46,21 +46,18 @@ class _STIXBase(Mapping):
 
     def object_properties(self):
         props = set(self._properties.keys())
-        custom_props = list(set(self._inner.keys()) - props)
-        custom_props.sort()
-
+        custom_props = sorted(set(self._inner.keys()) - props)
         all_properties = list(self._properties.keys())
         all_properties.extend(custom_props)  # Any custom properties to the bottom
 
         return all_properties
 
     def _check_property(self, prop_name, prop, kwargs):
-        if prop_name not in kwargs:
-            if hasattr(prop, 'default'):
-                value = prop.default()
-                if value == NOW:
-                    value = self.__now
-                kwargs[prop_name] = value
+        if prop_name not in kwargs and hasattr(prop, 'default'):
+            value = prop.default()
+            if value == NOW:
+                value = self.__now
+            kwargs[prop_name] = value
 
         if prop_name in kwargs:
             try:
@@ -95,15 +92,21 @@ class _STIXBase(Mapping):
         current_properties = self.properties_populated()
         list_of_properties_populated = set(list_of_properties).intersection(current_properties)
 
-        if list_of_properties and (not list_of_properties_populated or list_of_properties_populated == set(['extensions'])):
+        if list_of_properties and (
+            not list_of_properties_populated
+            or list_of_properties_populated == {'extensions'}
+        ):
             raise AtLeastOnePropertyError(self.__class__, list_of_properties)
 
     def _check_properties_dependency(self, list_of_properties, list_of_dependent_properties):
         failed_dependency_pairs = []
         for p in list_of_properties:
-            for dp in list_of_dependent_properties:
-                if not self.get(p) and self.get(dp):
-                    failed_dependency_pairs.append((p, dp))
+            failed_dependency_pairs.extend(
+                (p, dp)
+                for dp in list_of_dependent_properties
+                if not self.get(p) and self.get(dp)
+            )
+
         if failed_dependency_pairs:
             raise DependentPropertiesError(self.__class__, failed_dependency_pairs)
 
@@ -140,18 +143,17 @@ class _STIXBase(Mapping):
                             reason="Property name '%s' must begin with an alpha character." % prop_name,
                         )
 
-        # Remove any keyword arguments whose value is None or [] (i.e. empty list)
-        setting_kwargs = {}
         props = kwargs.copy()
-        props.update(custom_props)
-        for prop_name, prop_value in props.items():
-            if prop_value is not None and prop_value != []:
-                setting_kwargs[prop_name] = prop_value
+        props |= custom_props
+        setting_kwargs = {
+            prop_name: prop_value
+            for prop_name, prop_value in props.items()
+            if prop_value is not None and prop_value != []
+        }
 
         # Detect any missing required properties
         required_properties = set(get_required_properties(self._properties))
-        missing_kwargs = required_properties - set(setting_kwargs)
-        if missing_kwargs:
+        if missing_kwargs := required_properties - set(setting_kwargs):
             raise MissingPropertiesError(cls, missing_kwargs)
 
         for prop_name, prop_metadata in self._properties.items():
@@ -344,9 +346,8 @@ class _Observable(_STIXBase):
         except TypeError:
             raise ValueError("'%s' must be created with _valid_refs as a dict, not a list." % self.__class__.__name__)
 
-        if allowed_types:
-            if ref_type not in allowed_types:
-                raise InvalidObjRefError(self.__class__, prop_name, "object reference '%s' is of an invalid type '%s'" % (ref, ref_type))
+        if allowed_types and ref_type not in allowed_types:
+            raise InvalidObjRefError(self.__class__, prop_name, "object reference '%s' is of an invalid type '%s'" % (ref, ref_type))
 
     def _check_property(self, prop_name, prop, kwargs):
         super(_Observable, self)._check_property(prop_name, prop, kwargs)
@@ -396,7 +397,7 @@ class _Observable(_STIXBase):
 
             data = canonicalize(json_serializable_object, utf8=False)
             uuid_ = uuid.uuid5(SCO_DET_ID_NAMESPACE, data)
-            id_ = "{}--{}".format(self._type, str(uuid_))
+            id_ = f"{self._type}--{str(uuid_)}"
 
         return id_
 
@@ -514,7 +515,7 @@ def _un_json_escape(json_string):
     def replace(m):
         replacement = _JSON_ESCAPE_MAP.get(m.group(0)[1])
         if replacement is None:
-            raise ValueError("Unrecognized JSON escape: " + m.group(0))
+            raise ValueError(f"Unrecognized JSON escape: {m.group(0)}")
 
         return replacement
 

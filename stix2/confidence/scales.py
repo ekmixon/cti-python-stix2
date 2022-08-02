@@ -47,7 +47,9 @@ def none_low_med_high_to_value(scale_value):
     elif scale_value == 'High':
         return 85
     else:
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
 
 
 def value_to_none_low_medium_high(confidence_value):
@@ -90,7 +92,7 @@ def value_to_none_low_medium_high(confidence_value):
     elif 100 >= confidence_value >= 70:
         return 'High'
     else:
-        raise ValueError("Range of values out of bounds: %s" % confidence_value)
+        raise ValueError(f"Range of values out of bounds: {confidence_value}")
 
 
 def zero_ten_to_value(scale_value):
@@ -163,7 +165,9 @@ def zero_ten_to_value(scale_value):
     elif scale_value == '10':
         return 100
     else:
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
 
 
 def value_to_zero_ten(confidence_value):
@@ -234,7 +238,7 @@ def value_to_zero_ten(confidence_value):
     elif 100 >= confidence_value >= 95:
         return '10'
     else:
-        raise ValueError("Range of values out of bounds: %s" % confidence_value)
+        raise ValueError(f"Range of values out of bounds: {confidence_value}")
 
 
 def admiralty_credibility_to_value(scale_value):
@@ -277,7 +281,10 @@ def admiralty_credibility_to_value(scale_value):
 
     """
     if scale_value == '6 - Truth cannot be judged':
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
+
     elif scale_value == '5 - Improbable':
         return 10
     elif scale_value == '4 - Doubtful':
@@ -289,7 +296,9 @@ def admiralty_credibility_to_value(scale_value):
     elif scale_value == '1 - Confirmed by other sources':
         return 90
     else:
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
 
 
 def value_to_admiralty_credibility(confidence_value):
@@ -338,7 +347,7 @@ def value_to_admiralty_credibility(confidence_value):
     elif 100 >= confidence_value >= 80:
         return '1 - Confirmed by other sources'
     else:
-        raise ValueError("Range of values out of bounds: %s" % confidence_value)
+        raise ValueError(f"Range of values out of bounds: {confidence_value}")
 
 
 def wep_to_value(scale_value):
@@ -398,7 +407,9 @@ def wep_to_value(scale_value):
     elif scale_value == 'Certain':
         return 100
     else:
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
 
 
 def value_to_wep(confidence_value):
@@ -453,7 +464,7 @@ def value_to_wep(confidence_value):
     elif confidence_value == 100:
         return 'Certain'
     else:
-        raise ValueError("Range of values out of bounds: %s" % confidence_value)
+        raise ValueError(f"Range of values out of bounds: {confidence_value}")
 
 
 def dni_to_value(scale_value):
@@ -513,7 +524,9 @@ def dni_to_value(scale_value):
     elif scale_value == 'Almost Certain / Nearly Certain':
         return 95
     else:
-        raise ValueError("STIX Confidence value cannot be determined for %s" % scale_value)
+        raise ValueError(
+            f"STIX Confidence value cannot be determined for {scale_value}"
+        )
 
 
 def value_to_dni(confidence_value):
@@ -568,4 +581,4 @@ def value_to_dni(confidence_value):
     elif 100 >= confidence_value >= 90:
         return 'Almost Certain / Nearly Certain'
     else:
-        raise ValueError("Range of values out of bounds: %s" % confidence_value)
+        raise ValueError(f"Range of values out of bounds: {confidence_value}")

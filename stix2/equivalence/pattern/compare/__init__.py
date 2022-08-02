@@ -99,10 +99,4 @@ def iter_in(value, seq, cmp):
     Returns:
         True if the value is found in the iterable, False if it is not
     """
-    result = False
-    for seq_val in seq:
-        if cmp(value, seq_val) == 0:
-            result = True
-            break
-
-    return result
+    return any(cmp(value, seq_val) == 0 for seq_val in seq)

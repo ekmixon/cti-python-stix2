@@ -125,16 +125,14 @@ def remove_markings(obj, marking, selectors):
 
     remove = utils.build_granular_marking(to_remove).get('granular_markings')
 
-    if not any(marking in granular_markings for marking in remove):
+    if all(marking not in granular_markings for marking in remove):
         raise exceptions.MarkingNotFoundError(obj, remove)
 
     granular_markings = [
         m for m in granular_markings if m not in remove
     ]
 
-    granular_markings = utils.compress_markings(granular_markings)
-
-    if granular_markings:
+    if granular_markings := utils.compress_markings(granular_markings):
         return new_version(obj, granular_markings=granular_markings, allow_custom=True)
     else:
         return new_version(obj, granular_markings=None, allow_custom=True)
@@ -218,8 +216,8 @@ def clear_markings(obj, selectors, marking_ref=True, lang=True):
 
     clear = granular_dict.get('granular_markings', [])
 
-    if not any(
-        clear_selector in sdo_selectors.get('selectors', [])
+    if all(
+        clear_selector not in sdo_selectors.get('selectors', [])
         for sdo_selectors in granular_markings
         for clear_marking in clear
         for clear_selector in clear_marking.get('selectors', [])
@@ -237,9 +235,7 @@ def clear_markings(obj, selectors, marking_ref=True, lang=True):
                 if lng and lang:
                     granular_marking['lang'] = ''
 
-    granular_markings = utils.compress_markings(granular_markings)
-
-    if granular_markings:
+    if granular_markings := utils.compress_markings(granular_markings):
         return new_version(obj, granular_markings=granular_markings, allow_custom=True)
     else:
         return new_version(obj, granular_markings=None, allow_custom=True)
@@ -303,8 +299,4 @@ def is_marked(obj, marking=None, selectors=None, inherited=False, descendants=Fa
 
                     marked = True
 
-    if marking:
-        # All user-provided markings must be found.
-        return markings.issuperset(set(marking))
-
-    return marked
+    return markings.issuperset(set(marking)) if marking else marked

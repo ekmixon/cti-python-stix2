@@ -222,8 +222,7 @@ class Indicator(_DomainObject):
             except AttributeError:
                 pat_ver = '2.1'
 
-            errors = run_validator(self.get('pattern'), pat_ver)
-            if errors:
+            if errors := run_validator(self.get('pattern'), pat_ver):
                 raise InvalidValueError(self.__class__, 'pattern', str(errors[0]))
 
 
@@ -395,25 +394,25 @@ class Location(_DomainObject):
         elif map_engine == "Bing Maps":
             return self._to_bing_maps_url(params)
         else:
-            raise ValueError(map_engine + " is not a valid or currently-supported map engine")
+            raise ValueError(
+                f"{map_engine} is not a valid or currently-supported map engine"
+            )
 
     def _to_google_maps_url(self, params):
         url_base = "https://www.google.com/maps/search/?api=1&query="
         url_ending = params[0]
         for i in range(1, len(params)):
-            url_ending = url_ending + "," + params[i]
+            url_ending = f"{url_ending},{params[i]}"
 
-        final_url = url_base + quote_plus(url_ending)
-        return final_url
+        return url_base + quote_plus(url_ending)
 
     def _to_bing_maps_url(self, params):
         url_base = "https://bing.com/maps/default.aspx?where1="
         url_ending = params[0]
         for i in range(1, len(params)):
-            url_ending = url_ending + "," + params[i]
+            url_ending = f"{url_ending},{params[i]}"
 
-        final_url = url_base + quote_plus(url_ending) + "&lvl=16"   # level 16 zoom so long/lat searches shown more clearly
-        return final_url
+        return url_base + quote_plus(url_ending) + "&lvl=16"
 
 
 class Malware(_DomainObject):

@@ -78,13 +78,12 @@ def py_encode_basestring_ascii(s):
             n = ord(s)
             if n < 0x10000:
                 return '\\u{0:04x}'.format(n)
-                #return '\\u%04x' % (n,)
-            else:
-                # surrogate pair
-                n -= 0x10000
-                s1 = 0xd800 | ((n >> 10) & 0x3ff)
-                s2 = 0xdc00 | (n & 0x3ff)
-                return '\\u{0:04x}\\u{1:04x}'.format(s1, s2)
+            # surrogate pair
+            n -= 0x10000
+            s1 = 0xd800 | ((n >> 10) & 0x3ff)
+            s2 = 0xdc00 | (n & 0x3ff)
+            return '\\u{0:04x}\\u{1:04x}'.format(s1, s2)
+
     return '"' + ESCAPE_ASCII.sub(replace, s) + '"'
 
 
@@ -237,15 +236,8 @@ class JSONEncoder(object):
                 mysocket.write(chunk)
 
         """
-        if self.check_circular:
-            markers = {}
-        else:
-            markers = None
-        if self.ensure_ascii:
-            _encoder = encode_basestring_ascii
-        else:
-            _encoder = encode_basestring
-
+        markers = {} if self.check_circular else None
+        _encoder = encode_basestring_ascii if self.ensure_ascii else encode_basestring
         def floatstr(
             o, allow_nan=self.allow_nan,
             _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY,
@@ -335,11 +327,11 @@ def _make_iterencode(
             if isinstance(value, str):
                 yield buf + _encoder(value)
             elif value is None:
-                yield buf + 'null'
+                yield f'{buf}null'
             elif value is True:
-                yield buf + 'true'
+                yield f'{buf}true'
             elif value is False:
-                yield buf + 'false'
+                yield f'{buf}false'
             elif isinstance(value, int):
                 # Subclasses of int/float may override __str__, but we still
                 # want to encode them as integers/floats in JSON. One example
@@ -390,8 +382,6 @@ def _make_iterencode(
         for key, value in items:
             if isinstance(key, str):
                 pass
-            # JavaScript is weakly typed for these, so it makes sense to
-            # also allow them.  Many encoders seem to do something like this.
             elif isinstance(key, float):
                 # see comment for int/float in _make_iterencode
                 key = convert2Es6Format(key)
@@ -407,7 +397,7 @@ def _make_iterencode(
             elif _skipkeys:
                 continue
             else:
-                raise TypeError("key " + repr(key) + " is not a string")
+                raise TypeError(f"key {repr(key)} is not a string")
             if first:
                 first = False
             else:
@@ -472,16 +462,13 @@ def _make_iterencode(
             yield from _iterencode(o, _current_indent_level)
             if markers is not None:
                 del markers[markerid]
+
     return _iterencode
 
 def canonicalize(obj,utf8=True):
     textVal = JSONEncoder(sort_keys=True).encode(obj)
-    if utf8:
-        return textVal.encode()
-    return textVal
+    return textVal.encode() if utf8 else textVal
 
 def serialize(obj,utf8=True):
     textVal = JSONEncoder(sort_keys=False).encode(obj)
-    if utf8:
-        return textVal.encode()
-    return textVal
+    return textVal.encode() if utf8 else textVal

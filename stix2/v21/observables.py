@@ -714,9 +714,8 @@ class Process(_Observable):
         except AtLeastOnePropertyError as enclosing_exc:
             if 'extensions' not in self:
                 raise enclosing_exc
-            else:
-                if 'windows-process-ext' in self.get('extensions', {}):
-                    self.extensions['windows-process-ext']._check_at_least_one_property()
+            if 'windows-process-ext' in self.get('extensions', {}):
+                self.extensions['windows-process-ext']._check_at_least_one_property()
 
 
 class Software(_Observable):

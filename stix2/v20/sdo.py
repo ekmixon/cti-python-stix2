@@ -139,8 +139,7 @@ class Indicator(_DomainObject):
     ])
 
     def _check_object_constraints(self):
-        errors = run_validator(self.get('pattern'), '2.0')
-        if errors:
+        if errors := run_validator(self.get('pattern'), '2.0'):
             raise InvalidValueError(self.__class__, 'pattern', str(errors[0]))
 
 

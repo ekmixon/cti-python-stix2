@@ -44,13 +44,12 @@ class MockTAXIICollectionEndpoint(Collection):
         query_params = _filter_kwargs_to_query_params(filter_kwargs)
         assert isinstance(query_params, dict)
         full_filter = BasicFilter(query_params)
-        objs = full_filter.process_filter(
+        if objs := full_filter.process_filter(
             self.objects,
             ("id", "type", "version"),
             self.manifests,
             100,
-        )[0]
-        if objs:
+        )[0]:
             resp = Response()
             resp.status_code = 200
             resp.headers["Content-Range"] = f"items 0-{len(objs)}/{len(objs)}"
@@ -81,10 +80,9 @@ class MockTAXIICollectionEndpoint(Collection):
             filtered_objects = []
         if filtered_objects:
             return stix2.v20.Bundle(objects=filtered_objects)
-        else:
-            resp = Response()
-            resp.status_code = 404
-            resp.raise_for_status()
+        resp = Response()
+        resp.status_code = 404
+        resp.raise_for_status()
 
 
 @pytest.fixture
@@ -353,7 +351,7 @@ def test_add_get_remove_filter(collection):
     ds.filters.add(valid_filters[2])
     assert len(ds.filters) == 3
 
-    assert valid_filters == [f for f in ds.filters]
+    assert valid_filters == list(ds.filters)
 
     # remove
     ds.filters.remove(valid_filters[0])
