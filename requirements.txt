@@ -6,7 +6,7 @@ pre-commit
 pygments<3,>=2.4.1
 pytest
 pytest-cov
-sphinx<2
+sphinx<3.3.0
 sphinx-prompt
 tox
 
